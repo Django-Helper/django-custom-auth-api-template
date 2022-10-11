@@ -31,6 +31,6 @@ class CustomUsersManagersTests(TestCase):
             User.objects.create_user(email='normal@user.com', password="foo", username='normal50', user_type='')
 
     def test_create_superuser(self):
-        
+        pass
 
 
