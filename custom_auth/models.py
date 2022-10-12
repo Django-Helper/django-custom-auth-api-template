@@ -17,6 +17,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+
     email = models.EmailField(
         _('email address'), unique=True, blank=True, null=True)
     phone_number = models.CharField(
@@ -31,10 +32,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
 
+    REQUIRED_FIELDS = ['username']
+
     objects = CustomUserManager()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return str(self.email)
+        return self.email
