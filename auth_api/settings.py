@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-d)mte)5x_u+q=qnu6j_71)x2a!eh7f6oqw6zhb*@(3k%-vjhdq'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -81,23 +82,23 @@ WSGI_APPLICATION = 'auth_api.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    #     'NAME': os.environ.get('DB_NAME_DEV'),
-    #     'USER': os.environ.get('DB_USERNAME_DEV'),
-    #     'PASSWORD': os.environ.get('DB_PASSWORD_DEV'),
-    #     'HOST': os.environ.get('DB_HOST_DEV'),
-    #     'PORT': os.environ.get('DB_PORT_DEV'),
-    # }
-
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME':'test_auth_db',
-        'USER': 'rabbi',
-        'PASSWORD': '12345',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME_DEV'),
+        'USER': os.environ.get('DB_USERNAME_DEV'),
+        'PASSWORD': os.environ.get('DB_PASSWORD_DEV'),
+        'HOST': os.environ.get('DB_HOST_DEV'),
+        'PORT': os.environ.get('DB_PORT_DEV'),
     }
+
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #     'NAME':'test_auth_db',
+    #     'USER': 'rabbi',
+    #     'PASSWORD': '12345',
+    #     'HOST': 'localhost',
+    #     'PORT': '5432',
+    # }
 }
 
 
