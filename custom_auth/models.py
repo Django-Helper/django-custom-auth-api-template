@@ -46,9 +46,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class CustomerProfile(models.Model):
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+
     user = models.OneToOneField(CustomUser,
-        on_delete=models.CASCADE,
-        primary_key=True)
+        on_delete=models.CASCADE)
 
     name = models.CharField(max_length=255, blank=False, null=False, db_index=True)
     address = models.CharField(max_length=255, blank=True)
