@@ -67,3 +67,6 @@ class CustomerProfile(models.Model):
 
     class Meta:
         db_table = 'customer_profile'
+
+    def __str__(self) -> str:
+        return self.name
