@@ -1,5 +1,6 @@
 import email
 from enum import unique
+from unicodedata import name
 import uuid
 from django.db import models
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin)
@@ -41,3 +42,26 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return self.email
+
+
+
+class CustomerProfile(models.Model):
+    user = models.OneToOneField(CustomUser,
+        on_delete=models.CASCADE,
+        primary_key=True)
+
+    name = models.CharField(max_length=255, blank=False, null=False, db_index=True)
+    address = models.CharField(max_length=255, blank=True)
+    postal_code = models.CharField(max_length=255, blank=True)
+    country = models.CharField(max_length=255, blank=True)
+    profile_picture = models.ImageField(upload_to='upload/customer_profile_picture/')
+    in_cart = models.JSONField()
+    favourites = models.JSONField()
+    save_address = models.JSONField()
+    save_cards = models.JSONField()
+    history = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'customer_profile'
