@@ -30,6 +30,10 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'custom_auth.CustomUser'
+
+AUTHENTICATION_BACKENDS = [
+    'custom_auth.backends.EmailPhoneUsernameAuthenticationBackend'
+]
 # Application definition
 
 INSTALLED_APPS = [
