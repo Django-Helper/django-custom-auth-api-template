@@ -2,6 +2,7 @@ import email
 from email.policy import default
 from enum import unique
 from unicodedata import name
+from unittest.util import _MAX_LENGTH
 import uuid
 from django.db import models
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin)
@@ -48,9 +49,37 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def tokens(self):
         return ''
 
+class AdminRole(models.Model):
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
 
 class AdminProfile(models.Model):
-    pass
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+
+    user = models.OneToOneField(CustomUser, related_name = 'admin_profile',
+        on_delete=models.CASCADE, blank=True)
+    name = models.CharField(max_length=255, blank=False, null=False, db_index=True)
+    address = models.CharField(max_length=255, blank=True)
+    postal_code = models.CharField(max_length=255, blank=True)
+    country = models.CharField(max_length=255, blank=True)
+    profile_picture = models.ImageField(upload_to='upload/admin_profile_picture/', blank=True)
+    roles = models.ManyToManyField(AdminRole, related_name='admins', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+
+
+    
 
 class CustomerProfile(models.Model):
     id = models.UUIDField(

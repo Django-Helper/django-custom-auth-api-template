@@ -3,8 +3,19 @@ import imp
 from pyexpat import model
 from statistics import mode
 from rest_framework import serializers
-from .models import CustomUser, CustomerProfile
+from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole
 
+
+class AdminRoleSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = AdminRole
+        fields = '__all__'
+
+class AdminProfileSerializers(serializers.ModelSerializer):
+    roles = AdminRoleSerializers(required = False, many = True)
+    class Meta:
+        model = AdminProfile
+        fields = '__all__'
 
 class CustomerProfileSerializers(serializers.ModelSerializer):
     class Meta:
@@ -14,6 +25,7 @@ class CustomerProfileSerializers(serializers.ModelSerializer):
 
 class CustomUserSerializers(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
+    admin_profile = AdminProfileSerializers(required = False)
 
     class Meta:
         model = CustomUser
