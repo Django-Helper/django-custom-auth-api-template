@@ -34,6 +34,10 @@ AUTH_USER_MODEL = 'custom_auth.CustomUser'
 AUTHENTICATION_BACKENDS = [
     'custom_auth.backends.EmailPhoneUsernameAuthenticationBackend'
 ]
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler'
+}
 # Application definition
 
 INSTALLED_APPS = [
