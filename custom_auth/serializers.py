@@ -37,13 +37,15 @@ class CustomUserSerializers(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        print('custom user:', validated_data)
         customer_profile_data = validated_data.pop('customer_profile')
-        if validated_data.get('user_type') == 1:
-            user = CustomUser.objects.create_user(validated_data.pop('email'), validated_data.pop('password'), 
-            validated_data.pop('user_type'), **validated_data)
-        else:
+        admin_profile_data = validated_data.pop('admin_profile')
+        user_type = validated_data.pop('user_type')
+        if user_type == 3:
             user = CustomUser.objects.create_superuser(validated_data.pop('email'), validated_data.pop('password'), **validated_data)
-        print('user:', user)
-        CustomerProfile.objects.create(user=user, **customer_profile_data)
+        else:
+            user = CustomUser.objects.create_user(validated_data.pop('email'), validated_data.pop('password'), 
+            user_type, **validated_data)
+        if user_type == 1:
+            CustomerProfile.objects.create(user=user, **customer_profile_data)
+        AdminProfile.objects.create(user=user, **admin_profile_data)
         return user

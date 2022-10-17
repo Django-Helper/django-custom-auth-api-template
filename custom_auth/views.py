@@ -7,23 +7,17 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-class CustomerRegister(APIView):
+class Register(APIView):
     def post(self, request):
-        request.data['user_type'] = 2
-        print(request.data)
+        if request.data['user_type'] == 'customer':
+            request.data['user_type'] = 1
+        elif request.data['user_type'] == 'admin':
+            request.data['user_type'] = 2
+        else:
+            request.data['user_type'] = 3
         serializer = CustomUserSerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class AdminRegister(APIView):
-    def post(self, request):
-        request.data['user_type'] = 2
-        print(request.data)
-        serializer = CustomUserSerializers(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(serializer.error_messages, serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
