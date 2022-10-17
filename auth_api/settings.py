@@ -36,7 +36,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 }
 # Application definition
 
@@ -150,3 +153,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# send email
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = '587'
+EMAIL_HOST_USER = 'jasrabbi50@gmail.com'
+EMAIL_HOST_PASSWORD = 'lnajlvwabmcvoakc'
