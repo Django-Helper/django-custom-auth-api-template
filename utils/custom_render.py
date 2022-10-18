@@ -1,15 +1,42 @@
 from rest_framework import renderers
 import json
 
-class CustomRenderer(renderers.JSONRenderer):
+class CustomJSONRenderer(renderers.JSONRenderer):
 
     charset='utf-8'
-    # 'status_code': renderer_context['response'].status_code
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        errors = []
         if 'ErrorDetail' in str(data):
-            response = json.dumps({'success': False, 'status_code': renderer_context['response'].status_code, 'message':data})
+            if isinstance(data, dict):
+                if 'customer_profile' in data:
+                    customer_profile = data.pop('customer_profile')
+                    data.update(customer_profile)
+                if 'admin_profile' in data:
+                    admin_profile = data.pop('admin_profile')
+                    data.update(admin_profile)
+                for field, value in data.items():
+                    print(field,value)
+                    errors.append("{} : {}".format(field, " ".join(value)))
+            else:
+                for error in data:
+                    errors.append(error)
+            response = json.dumps({'success': False, 'messages':errors})
         else:
-            response = {'success': True, 'status_code': renderer_context['response'].status_code}
+            response = {'success': True}
             response.update(data)
             return json.dumps(response)
         return response
+
+
+# class CustomJSONRenderer(renderers.JSONRenderer):
+
+#     def render(self, data, accepted_media_type=None, renderer_context=None):
+
+#         response_data = {'message': '', 'errors': [], 'data': data, 'success': 'success'}
+
+#         getattr(renderer_context.get('view').get_serializer().Meta,'resource_name', 'objects')
+
+#         # call super to render the response
+#         response = super(CustomJSONRenderer, self).render(response_data, accepted_media_type, renderer_context)
+
+#         return response

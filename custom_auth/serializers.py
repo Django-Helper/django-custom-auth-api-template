@@ -1,9 +1,13 @@
 from dataclasses import fields
+import email
 import imp
 from pyexpat import model
 from statistics import mode
 from rest_framework import serializers
 from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole
+from django.contrib import auth
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 
 class AdminRoleSerializers(serializers.ModelSerializer):
@@ -26,10 +30,13 @@ class CustomerProfileSerializers(serializers.ModelSerializer):
 class CustomUserSerializers(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
     admin_profile = AdminProfileSerializers(required = False)
+    password = serializers.CharField(
+        max_length=68, min_length=8, write_only=True)
+
 
     class Meta:
         model = CustomUser
-        fields = "__all__"
+        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'customer_profile', 'admin_profile']
 
     def validate_password(self, value):
         if len(value) < 8:
@@ -51,3 +58,74 @@ class CustomUserSerializers(serializers.ModelSerializer):
         else:
             AdminProfile.objects.create(user=user, **admin_profile_data)
         return user
+
+
+class EmailVerificationSerializer(serializers.ModelSerializer):
+    token = serializers.CharField(max_length=555)
+
+    class Meta:
+        model = CustomUser
+        fields = ['token']
+
+
+class LoginSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(
+        max_length=68, min_length=6, write_only=True)
+    username = serializers.CharField(
+        max_length=255, min_length=3)
+
+    tokens = serializers.SerializerMethodField('get_tokens')
+
+    def get_tokens(self, obj):
+        user = CustomUser.objects.get(email=obj['email']) if obj['email'] else CustomUser.objects.get(phone_number=obj['phone_number'])
+
+        return {
+            'refresh': user.tokens()['refresh'],
+            'access': user.tokens()['access']
+        }
+    
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'username', 'phone_number', 'password', 'is_verified', 'tokens']
+
+    
+    def validate(self, attrs):
+        email_phone_username = attrs.get('username', '')
+        password = attrs.get('password', '')
+        # filtered_user_by_email = User.objects.filter(email=email)
+        user = auth.authenticate(username=email_phone_username, password=password)
+
+        # if filtered_user_by_email.exists() and filtered_user_by_email[0].auth_provider != 'email':
+        #     raise AuthenticationFailed(
+        #         detail='Please continue your login using ' + filtered_user_by_email[0].auth_provider)
+        if not user:
+            raise AuthenticationFailed('Invalid credentials, try again')
+        if not user.is_active:
+            raise AuthenticationFailed('Account disabled, contact admin')
+        # if not user.is_verified:
+        #     raise AuthenticationFailed('Email is not verified')
+
+        return {
+            'email': user.email,
+            'phone_number': user.phone_number,
+            'username': user.username,
+            'is_verified': user.is_verified,
+            'tokens': user.tokens
+        }
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    default_error_messages = {
+        'bad_token': ('Token is expired or invalid')
+    }
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+    
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.token).blacklist()
+        except TokenError:
+            self.fail('bad_token')

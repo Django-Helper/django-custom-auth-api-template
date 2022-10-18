@@ -37,10 +37,16 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    # Add custom renderer.
+    'DEFAULT_RENDERER_CLASSES': (
+                'utils.custom_render.CustomJSONRenderer',
+                'rest_framework.renderers.JSONRenderer',
+                'rest_framework.renderers.BrowsableAPIRenderer'),
+    # Add cutom exception handler
+    # 'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler'
 }
 
 SIMPLE_JWT = {
@@ -64,6 +70,7 @@ INSTALLED_APPS = [
     # third party
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_yasg',
 
     # local
     'custom_auth'

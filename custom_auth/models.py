@@ -8,6 +8,7 @@ from django.db import models
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin)
 from django.utils.translation import gettext_lazy as _
 from custom_auth.managers import CustomUserManager
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # Create your models here.
 
@@ -47,7 +48,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
     
     def tokens(self):
-        return ''
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }
+
 
 class AdminRole(models.Model):
     id = models.UUIDField(

@@ -1,37 +1,42 @@
 import email
 from lib2to3.pgen2 import token
 from django.shortcuts import render
-from .models import CustomUser
-from .serializers import CustomUserSerializers
+from .models import CustomUser, CustomerProfile
+from .serializers import CustomUserSerializers, EmailVerificationSerializer, LoginSerializer, LogoutSerializer
 from django.http import Http404
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework import status
-from utils.custom_render import CustomRenderer
+from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from utils.send_email import Util
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 import jwt
 from auth_api import settings
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
-
-class Register(APIView):
-    renderer_classes = [CustomRenderer]
+class Register(GenericAPIView):
+    serializer_class = CustomUserSerializers
 
     def post(self, request):
-        if request.data['user_type'] == 'customer':
-            request.data['user_type'] = 1
-        elif request.data['user_type'] == 'admin':
-            request.data['user_type'] = 2
-        else:
-            request.data['user_type'] = 3
-        serializer = CustomUserSerializers(data=request.data)
+        if 'user_type' in request.data:
+            user_type = request.data['user_type']
+            if user_type == 'customer':
+                user_type = 1
+            elif user_type == 'admin':
+                user_type = 2
+            else:
+                user_type = 3
+            request.data['user_type'] = user_type
+
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
 
             user_data = serializer.data
-            user = CustomUser.objects.get(id=user_data['id'])
+            user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
             token = RefreshToken.for_user(user)
             current_site = get_current_site(request).domain
             relativeLink = reverse('register_email_verify')
@@ -44,16 +49,57 @@ class Register(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyRegisterEmail(APIView):
+    serializer_class = EmailVerificationSerializer
+    token_param_config = openapi.Parameter(
+        'token', in_=openapi.IN_QUERY, description='Description', type=openapi.TYPE_STRING
+    )
+
+    @swagger_auto_schema(manual_parameters=[token_param_config])
     def get(self, request):
         token = request.GET.get('token')
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-            print(payload)
             user = CustomUser.objects.get(id=payload['user_id'])
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
-            return Response({'email': 'Successfully activated'}, status=status.HTTP_200_OK)
+            return Response({'email': 'Successfully activated.'}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError as identifier:
-            return Response({'error': 'Verification expired'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Activation expired.'}, status=status.HTTP_400_BAD_REQUEST)
+        except jwt.exceptions.DecodeError as identifier:
+            return Response({'error': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginView(GenericAPIView):
+    serializer_class = LoginSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class LogoutView(GenericAPIView):
+    serializer_class = LogoutSerializer
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'message': 'Successfully logout.'},status=status.HTTP_204_NO_CONTENT)
+
+class CustomerCartView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        customer = CustomerProfile.objects.get(user=request.user)
+        return Response({'data': customer.in_cart}, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        cart_items = request.data['cart_items']
+        customer = CustomerProfile.objects.get(user=request.user)
+        customer.in_cart = cart_items
+        customer.save()
+        return Response({'data': customer.in_cart}, status=status.HTTP_200_OK)
 
