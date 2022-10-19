@@ -106,6 +106,7 @@ class CustomerCartView(GenericAPIView):
             return Response({'data': customer.in_cart}, status=status.HTTP_200_OK)
         except KeyError as e:
             raise ValidationError('Invalid cart_items json.')
+        
 
 class CustomerFavouriteView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -123,4 +124,21 @@ class CustomerFavouriteView(GenericAPIView):
             return Response({'data': customer.favourites}, status=status.HTTP_200_OK)
         except KeyError as e:
             raise ValidationError('Invalid favourite_items json.')
+
+class CustomerHistoryView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        customer = CustomerProfile.objects.get(user=request.user)
+        return Response({'data': customer.history}, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        try:
+            history_items = request.data['history_items']
+            customer = CustomerProfile.objects.get(user=request.user)
+            customer.history = history_items
+            customer.save()
+            return Response({'data': customer.history}, status=status.HTTP_200_OK)
+        except KeyError as e:
+            raise ValidationError('Invalid history_items json.')
 
