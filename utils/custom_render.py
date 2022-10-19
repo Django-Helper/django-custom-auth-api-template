@@ -1,4 +1,5 @@
 from rest_framework import renderers
+from django.core.serializers.json import DjangoJSONEncoder
 import json
 
 class CustomJSONRenderer(renderers.JSONRenderer):
@@ -25,8 +26,11 @@ class CustomJSONRenderer(renderers.JSONRenderer):
             response = json.dumps({'success': False, 'messages':errors})
         else:
             response = {'success': True}
-            response.update(data)
-            return json.dumps(response)
+            if 'data' not in data:
+                response.update({'data': data})
+            else:
+                response.update(data)
+            return json.dumps(response, cls=DjangoJSONEncoder)
         return response
 
 

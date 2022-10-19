@@ -26,6 +26,19 @@ class CustomerProfileSerializers(serializers.ModelSerializer):
         model = CustomerProfile
         fields = '__all__'
 
+class CustomUserDetailsSerializer(serializers.ModelSerializer):
+    customer_profile = CustomerProfileSerializers(required = False)
+
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'phone_number', 'username', 'customer_profile']
+    
+    def update(self, instance, validated_data):
+        customer_profile_serializer = self.fields['customer_profile']
+        customer_profile = instance.customer_profile
+        customer_profile_data = validated_data.pop('customer_profile')
+        customer_profile_serializer.update(customer_profile, customer_profile_data)
+        return super().update(instance, validated_data)
 
 class CustomUserSerializers(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
@@ -59,19 +72,6 @@ class CustomUserSerializers(serializers.ModelSerializer):
             AdminProfile.objects.create(user=user, **admin_profile_data)
         return user
 
-    def update(self, instance, validated_data):
-        if 'customer_profile' in validated_data:
-            customer_profile_serializer = self.fields['customer_profile']
-            customer_profile = instance.customer_profile
-            customer_profile_data = validated_data.pop('customer_profile')
-            customer_profile_serializer.update(customer_profile, customer_profile_data)
-            return super(CustomerProfileSerializers, self).update(instance, validated_data)
-        if 'admin_profile' in validated_data:
-            admin_profile_serializer = self.fields['admin_profile']
-            admin_profile = instance.admin_profile
-            admin_profile_data = validated_data.pop('admin_profile')
-            admin_profile_serializer.update(admin_profile, admin_profile_data)
-            return super(AdminProfileSerializers, self).update(instance, validated_data)
 
 
 

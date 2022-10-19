@@ -3,15 +3,16 @@ from lib2to3.pgen2 import token
 from signal import raise_signal
 from django.shortcuts import render
 from .models import CustomUser, CustomerProfile
-from .serializers import CustomUserSerializers, EmailVerificationSerializer, LoginSerializer, LogoutSerializer
+from .serializers import CustomUserSerializers, CustomUserDetailsSerializer, EmailVerificationSerializer, LoginSerializer, LogoutSerializer
 from django.http import Http404
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from utils.send_email import Util
 from django.contrib.sites.shortcuts import get_current_site
+from django.shortcuts import get_object_or_404, get_list_or_404
 from django.urls import reverse
 import jwt
 from auth_api import settings
@@ -92,10 +93,21 @@ class LogoutView(GenericAPIView):
 
 class CustomerProfileView(RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = CustomUserSerializers
+    serializer_class = CustomUserDetailsSerializer
     lookup_field = 'username'
 
+    def get_object(self):
+        username = self.kwargs['username']
+        return get_object_or_404(CustomUser, username=username)
     
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+class ListCustomerView(ListAPIView):
+    queryset = CustomUser.objects.filter(user_type=1)
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomUserSerializers
+
 
 class CustomerCartView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
