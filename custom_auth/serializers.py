@@ -59,6 +59,21 @@ class CustomUserSerializers(serializers.ModelSerializer):
             AdminProfile.objects.create(user=user, **admin_profile_data)
         return user
 
+    def update(self, instance, validated_data):
+        if 'customer_profile' in validated_data:
+            customer_profile_serializer = self.fields['customer_profile']
+            customer_profile = instance.customer_profile
+            customer_profile_data = validated_data.pop('customer_profile')
+            customer_profile_serializer.update(customer_profile, customer_profile_data)
+            return super(CustomerProfileSerializers, self).update(instance, validated_data)
+        if 'admin_profile' in validated_data:
+            admin_profile_serializer = self.fields['admin_profile']
+            admin_profile = instance.admin_profile
+            admin_profile_data = validated_data.pop('admin_profile')
+            admin_profile_serializer.update(admin_profile, admin_profile_data)
+            return super(AdminProfileSerializers, self).update(instance, validated_data)
+
+
 
 class EmailVerificationSerializer(serializers.ModelSerializer):
     token = serializers.CharField(max_length=555)

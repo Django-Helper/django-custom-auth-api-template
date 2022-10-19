@@ -6,7 +6,7 @@ from .models import CustomUser, CustomerProfile
 from .serializers import CustomUserSerializers, EmailVerificationSerializer, LoginSerializer, LogoutSerializer
 from django.http import Http404
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -89,6 +89,13 @@ class LogoutView(GenericAPIView):
         serializer.save()
 
         return Response({'message': 'Successfully logout.'},status=status.HTTP_204_NO_CONTENT)
+
+class CustomerProfileView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomUserSerializers
+    lookup_field = 'username'
+
+    
 
 class CustomerCartView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
