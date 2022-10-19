@@ -1,5 +1,6 @@
 import email
 from lib2to3.pgen2 import token
+from signal import raise_signal
 from django.shortcuts import render
 from .models import CustomUser, CustomerProfile
 from .serializers import CustomUserSerializers, EmailVerificationSerializer, LoginSerializer, LogoutSerializer
@@ -16,6 +17,7 @@ import jwt
 from auth_api import settings
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.exceptions import ValidationError
 
 class Register(GenericAPIView):
     serializer_class = CustomUserSerializers
@@ -65,10 +67,9 @@ class VerifyRegisterEmail(APIView):
                 user.save()
             return Response({'email': 'Successfully activated.'}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError as identifier:
-            return Response({'error': 'Activation expired.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Activation expired.')
         except jwt.exceptions.DecodeError as identifier:
-            return Response({'error': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
-
+            raise ValidationError('Invalid token.')
 
 class LoginView(GenericAPIView):
     serializer_class = LoginSerializer
@@ -97,9 +98,29 @@ class CustomerCartView(GenericAPIView):
         return Response({'data': customer.in_cart}, status=status.HTTP_200_OK)
     
     def post(self, request):
-        cart_items = request.data['cart_items']
+        try:
+            cart_items = request.data['cart_items']
+            customer = CustomerProfile.objects.get(user=request.user)
+            customer.in_cart = cart_items
+            customer.save()
+            return Response({'data': customer.in_cart}, status=status.HTTP_200_OK)
+        except KeyError as e:
+            raise ValidationError('Invalid cart_items json.')
+
+class CustomerFavouriteView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
         customer = CustomerProfile.objects.get(user=request.user)
-        customer.in_cart = cart_items
-        customer.save()
-        return Response({'data': customer.in_cart}, status=status.HTTP_200_OK)
+        return Response({'data': customer.favourites}, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        try:
+            favourite_items = request.data['favourite_items']
+            customer = CustomerProfile.objects.get(user=request.user)
+            customer.favourites = favourite_items
+            customer.save()
+            return Response({'data': customer.favourites}, status=status.HTTP_200_OK)
+        except KeyError as e:
+            raise ValidationError('Invalid favourite_items json.')
 

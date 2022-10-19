@@ -129,3 +129,15 @@ class LogoutSerializer(serializers.Serializer):
             RefreshToken(self.token).blacklist()
         except TokenError:
             self.fail('bad_token')
+
+
+# class CustomerCartSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = CustomerProfile
+#         fields = ['in_cart']
+    
+#     def validate(self, attrs):
+#         in_cart = attrs['in_cart']
+#         if not in_cart:
+#             raise serializers.ValidationError('Cart item can not be null.')
+#         return attrs

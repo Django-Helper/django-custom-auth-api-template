@@ -14,9 +14,11 @@ class CustomJSONRenderer(renderers.JSONRenderer):
                 if 'admin_profile' in data:
                     admin_profile = data.pop('admin_profile')
                     data.update(admin_profile)
-                for field, value in data.items():
-                    print(field,value)
-                    errors.append("{} : {}".format(field, " ".join(value)))
+                if 'detail' in str(data):
+                    errors.append("{} : {}".format('detail', " ".join(data['detail'])))
+                else:
+                    for field, value in data.items():
+                        errors.append("{} : {}".format(field, " ".join(value)))
             else:
                 for error in data:
                     errors.append(error)
