@@ -1,7 +1,9 @@
+from dataclasses import field, fields
+from signal import raise_signal
 from rest_framework import serializers
 from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole
 from django.contrib import auth
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
@@ -183,6 +185,37 @@ class SetNewPasswordSerializer(serializers.Serializer):
             raise AuthenticationFailed('The reset link is invalid', 401)
 
 
+class VerifyOTPSerializer(serializers.Serializer):
+    otp = serializers.CharField(min_length=4, max_length=6, write_only=True)
+
+    class Meta:
+        fields = ['otp']
+
+    def validate(self, attrs):
+        if attrs['otp'] != '1234':
+            raise ValidationError('OTP is not match.')
+        return attrs
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(
+        min_length=6, max_length=68, write_only=True)
+    new_password = serializers.CharField(
+        min_length=6, max_length=68, write_only=True)
+    confirm_password = serializers.CharField(
+        min_length=6, max_length=68, write_only=True)
+    
+    class Meta:
+        fields = ['old_password', 'new_password', 'confirm_password']
+
+    def validate(self, attrs):
+        user = self.context['user']
+        if not user.check_password(attrs['old_password']):
+            raise ValidationError('Your old password is wrong.')
+        if attrs['new_password'] == attrs['confirm_password']:
+            raise ValidationError('New Password and confirm passord is not match.')
+        user.set_password(attrs['confirm_password'])
+        user.save()
+        return (user)
 
 # class CustomerCartSerializer(serializers.ModelSerializer):
 #     class Meta:

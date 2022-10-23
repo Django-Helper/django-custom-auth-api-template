@@ -1,12 +1,14 @@
 import email
 from lib2to3.pgen2 import token
+from multiprocessing import context
 from signal import raise_signal
 from django.shortcuts import render
 from .models import CustomUser, CustomerProfile
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
                             LogoutSerializer, ResetPasswordEmailOrPhoneRequestSerializer,
-                            SetNewPasswordSerializer)
+                            SetNewPasswordSerializer, VerifyOTPSerializer,
+                            ChangePasswordSerializer)
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
@@ -129,8 +131,7 @@ class RequestPasswordResetEmailOrPhoneOTP(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
 
         email_or_phone = request.data.get('email_or_phone', '')
-
-        if CustomUser.objects.filter(email=email_or_phone).exists():
+        try:
             user = CustomUser.objects.get(email=email_or_phone)
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
@@ -146,7 +147,9 @@ class RequestPasswordResetEmailOrPhoneOTP(GenericAPIView):
             data = {'email_body': email_body, 'to_email': user.email,
                     'email_subject': 'Reset your passsword'}
             Util.send_email(data)
-        return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+            return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({'details': 'something wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PasswordTokenCheckAPIForEmail(GenericAPIView):
@@ -181,10 +184,22 @@ class PasswordTokenCheckAPIForEmail(GenericAPIView):
 
 
 class VerifyOTP(GenericAPIView):
-    pass
+    serializer_class = VerifyOTPSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            return Response({'message': 'OTP verify successfully'}, status=status.HTTP_200_OK)
+        raise ValidationError('OTP is not match.')
 
 class ChangePawordFromProfile(GenericAPIView):
-    pass
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data,context = {'user': request.user})
+        if serializer.is_valid():
+            return Response({'message': 'Password Change Successfully.'}, status=status.HTTP_200_OK)
+        raise ValidationError('Old Password is not match.')
 
 class SetNewPasswordAPIView(GenericAPIView):
     serializer_class = SetNewPasswordSerializer
