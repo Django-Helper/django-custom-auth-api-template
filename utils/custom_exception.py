@@ -1,3 +1,4 @@
+from urllib import request
 from rest_framework.views import exception_handler
 
 # def custom_exception_handler(exc, context):
@@ -16,12 +17,14 @@ def custom_exception_handler(exc, context):
   if response is not None:
 
     errors = []
+
     message = response.data.get('detail')
+    print('custom exception:', response.data)
     if not message:
         for field, value in response.data.items():
             errors.append("{} : {}".format(field, " ".join(value)))
-        response.data = {'message': errors, 'success': False}
+        response.data = {'message': 'Bad Request', 'errors': errors, 'success': False}
     else:
-        response.data = {'message': [message], 'success': False}
+        response.data = {'message': message, 'errors': [message],'success': False}
 
   return response

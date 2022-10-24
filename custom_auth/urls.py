@@ -25,7 +25,7 @@ urlpatterns = [
          name="request_reset_password_email_or_otp"),
     path('password_reset/<uidb64>/<token>/',
          PasswordTokenCheckAPIForEmail.as_view(), name='password_reset_confirm_for_email'),
-    path('forgot_password_reset', SetNewPasswordAPIView.as_view(),
+    path('forgot_password_reset/', SetNewPasswordAPIView.as_view(),
          name='forgot_password_reset'),
     path('verify_otp/', VerifyOTP.as_view(), name='verify_otp'),
     path('change_password/', ChangePawordFromProfile.as_view(), name='change_password')

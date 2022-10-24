@@ -7,29 +7,33 @@ class CustomJSONRenderer(renderers.JSONRenderer):
     charset='utf-8'
     def render(self, data, accepted_media_type=None, renderer_context=None):
         errors = []
-        if 'ErrorDetail' in str(data):
-            if isinstance(data, dict):
-                if 'customer_profile' in data:
-                    customer_profile = data.pop('customer_profile')
-                    data.update(customer_profile)
-                if 'admin_profile' in data:
-                    admin_profile = data.pop('admin_profile')
-                    data.update(admin_profile)
-                if 'detail' in str(data):
-                    errors.append("{} : {}".format('detail', " ".join(data['detail'])))
+        print('custom renderer:', data)
+        # if 'ErrorDetail' in str(data):
+        if 'errors' in str(data):
+            if isinstance(data['errors'], dict):
+                if 'customer_profile' in data['errors']:
+                    customer_profile = data['errors'].pop('customer_profile')
+                    data['errors'].update(customer_profile)
+                if 'admin_profile' in data['errors']:
+                    admin_profile = data['errors'].pop('admin_profile')
+                    data['errors'].update(admin_profile)
+                if 'detail' in str(data['errors']):
+                    errors.append("{} : {}".format('detail', " ".join(data['errors']['detail'])))
                 else:
-                    for field, value in data.items():
+                    for field, value in data['errors'].items():
                         errors.append("{} : {}".format(field, " ".join(value)))
             else:
-                for error in data:
+                for error in data['errors']:
                     errors.append(error)
-            response = json.dumps({'success': False, 'messages':errors})
+            response = json.dumps({'success': False, 'message': data['message'] ,'errors':errors})
         else:
             response = {'success': True}
-            if 'data' not in data:
-                response.update({'data': data})
-            else:
-                response.update(data)
+            response['message'] = data['message'] if 'message' in data else 'Successfull'
+            response['data'] = data['data'] if 'data' in data else data
+            # if 'data' not in data:
+            #     response.update({'data': []})
+            # else:
+            # response.update(data)
             return json.dumps(response, cls=DjangoJSONEncoder)
         return response
 

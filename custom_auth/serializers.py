@@ -31,7 +31,7 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'customer_profile']
+        fields = ['email', 'phone_number', 'username', 'is_verified', 'customer_profile']
     
     def update(self, instance, validated_data):
         customer_profile_serializer = self.fields['customer_profile']
@@ -148,7 +148,7 @@ class LogoutSerializer(serializers.Serializer):
 
 class ResetPasswordEmailOrPhoneRequestSerializer(serializers.Serializer):
     # email_or_phone = serializers.EmailField(min_length=2)
-    email_or_phone = serializers.CharField(max_length=500)
+    email_or_phone = serializers.CharField(max_length=500, required=True)
 
     redirect_url = serializers.CharField(max_length=500, required=False)
 

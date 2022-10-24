@@ -1,15 +1,9 @@
-import email
-from lib2to3.pgen2 import token
-from multiprocessing import context
-from signal import raise_signal
-from django.shortcuts import render
 from .models import CustomUser, CustomerProfile
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
                             LogoutSerializer, ResetPasswordEmailOrPhoneRequestSerializer,
                             SetNewPasswordSerializer, VerifyOTPSerializer,
                             ChangePasswordSerializer)
-from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.response import Response
@@ -64,9 +58,9 @@ class Register(GenericAPIView):
             email_body = 'Hi '+user.username+' Use link below to verify your email \n'+absurl
             data = {'email_body':email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
             Util.send_email(data)
-            context = {'data': 'registration successfull. For verfiy check email and verfiy.'}
+            context = {'message': 'registration successfull. For verfiy check email and verfiy.'}
             return Response(context, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class SendVerifyEmail(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -80,7 +74,7 @@ class SendVerifyEmail(APIView):
         email_body = 'Hi '+user.username+' Use link below to verify your email \n'+absurl
         data = {'email_body':email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
         Util.send_email(data)
-        context = {'data': 'Verify email send successfully. For verfiy check email and verfiy.'}
+        context = {'message': 'Verify email send successfully. For verfiy check email and verfiy.'}
         return Response(context, status=status.HTTP_200_OK)
 
 class VerifyRegisterEmail(APIView):
@@ -98,7 +92,7 @@ class VerifyRegisterEmail(APIView):
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
-            return Response({'email': 'Successfully activated.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Successfully activated.'}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError as identifier:
             raise ValidationError('Activation expired.')
         except jwt.exceptions.DecodeError as identifier:
@@ -108,8 +102,10 @@ class LoginView(GenericAPIView):
     serializer_class = LoginSerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if serializer.is_valid():
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(GenericAPIView):
     serializer_class = LogoutSerializer
@@ -118,10 +114,11 @@ class LogoutView(GenericAPIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response({'message': 'Successfully logout.'},status=status.HTTP_204_NO_CONTENT)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Successfully logout.'},status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RequestPasswordResetEmailOrPhoneOTP(GenericAPIView):
@@ -129,9 +126,9 @@ class RequestPasswordResetEmailOrPhoneOTP(GenericAPIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-
-        email_or_phone = request.data.get('email_or_phone', '')
+        serializer.is_valid(raise_exception=True)
         try:
+            email_or_phone = request.data.get('email_or_phone', '')
             user = CustomUser.objects.get(email=email_or_phone)
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
@@ -149,7 +146,9 @@ class RequestPasswordResetEmailOrPhoneOTP(GenericAPIView):
             Util.send_email(data)
             return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
-            return Response({'details': 'something wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': 'something wrong', 'errors': ['user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except:
+            raise ValidationError('Invalid json type.')
 
 
 class PasswordTokenCheckAPIForEmail(GenericAPIView):
@@ -180,7 +179,9 @@ class PasswordTokenCheckAPIForEmail(GenericAPIView):
                     return CustomRedirect(redirect_url+'?token_valid=False')
                     
             except UnboundLocalError as e:
-                return Response({'error': 'Token is not valid, please request a new one'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message':'UnboundLocalError', 'errors': ['Token is not valid, please request a new one']}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as e:
+            return Response({'message': 'ValueError','errors': ['uidb64 and token is not valid']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class VerifyOTP(GenericAPIView):
@@ -189,7 +190,8 @@ class VerifyOTP(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             return Response({'message': 'OTP verify successfully'}, status=status.HTTP_200_OK)
-        raise ValidationError('OTP is not match.')
+        else:
+            return Response({'message': 'ValidationError','errors': ['OTP is not match']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ChangePawordFromProfile(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
