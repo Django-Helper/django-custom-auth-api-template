@@ -46,11 +46,12 @@ REST_FRAMEWORK = {
                 'rest_framework.renderers.JSONRenderer',
                 'rest_framework.renderers.BrowsableAPIRenderer'),
     # Add cutom exception handler
-    'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler',
+    'NON_FIELD_ERRORS': 'error'
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,

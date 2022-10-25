@@ -28,7 +28,9 @@ class CustomerProfileSerializers(serializers.ModelSerializer):
 
 class CustomUserDetailsSerializer(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
-
+    email = serializers.EmailField(read_only=True)
+    phone_number = serializers.CharField(read_only=True)
+    is_verified = serializers.BooleanField(read_only=True)
     class Meta:
         model = CustomUser
         fields = ['email', 'phone_number', 'username', 'is_verified', 'customer_profile']
@@ -209,10 +211,13 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         user = self.context['user']
+        print(attrs['new_password'], attrs['confirm_password'])
         if not user.check_password(attrs['old_password']):
             raise ValidationError('Your old password is wrong.')
-        if attrs['new_password'] == attrs['confirm_password']:
+        if attrs['new_password'] != attrs['confirm_password']:
             raise ValidationError('New Password and confirm passord is not match.')
+        if user.check_password(attrs['new_password']):
+            raise ValidationError('New password can not be same old password.')
         user.set_password(attrs['confirm_password'])
         user.save()
         return (user)

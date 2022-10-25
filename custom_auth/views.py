@@ -25,6 +25,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.shortcuts import redirect
 from django.http import HttpResponsePermanentRedirect
 import os
+from .utils import get_registration_verify_email_data
 
 
 class CustomRedirect(HttpResponsePermanentRedirect):
@@ -48,18 +49,15 @@ class Register(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
-
             user_data = serializer.data
             user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
-            token = RefreshToken.for_user(user)
-            current_site = get_current_site(request).domain
-            relativeLink = reverse('register_email_verify')
-            absurl = 'http://'+current_site+relativeLink+'?token='+str(token)
-            email_body = 'Hi '+user.username+' Use link below to verify your email \n'+absurl
-            data = {'email_body':email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
-            Util.send_email(data)
-            context = {'message': 'registration successfull. For verfiy check email and verfiy.'}
-            return Response(context, status=status.HTTP_201_CREATED)
+            data = get_registration_verify_email_data(user, request)
+            try:
+                Util.send_email(data)
+                context = {'message': 'registration successfull. For verfiy check email and verfiy. Verify email expired within 30 minutes'}
+                return Response(context, status=status.HTTP_201_CREATED)
+            except:
+                return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class SendVerifyEmail(APIView):
@@ -67,15 +65,15 @@ class SendVerifyEmail(APIView):
 
     def post(self, request):
         user = request.user
-        token = RefreshToken.for_user(user)
-        current_site = get_current_site(request).domain
-        relativeLink = reverse('register_email_verify')
-        absurl = 'http://'+current_site+relativeLink+'?token='+str(token)
-        email_body = 'Hi '+user.username+' Use link below to verify your email \n'+absurl
-        data = {'email_body':email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
-        Util.send_email(data)
-        context = {'message': 'Verify email send successfully. For verfiy check email and verfiy.'}
-        return Response(context, status=status.HTTP_200_OK)
+        if not user.is_verified:
+            data = get_registration_verify_email_data(user, request)
+            try:
+                Util.send_email(data)
+                context = {'message': 'Verify email send successfully. For verfiy check email and verfiy. Verify email expired within 30 minutes.'}
+                return Response(context, status=status.HTTP_200_OK)
+            except:
+                return Response({"message": 'Network Error', 'errors': ['can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'message': 'Validation Error', 'errors': ['User Already verified.']})
 
 class VerifyRegisterEmail(APIView):
     serializer_class = EmailVerificationSerializer
@@ -92,7 +90,9 @@ class VerifyRegisterEmail(APIView):
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
-            return Response({'message': 'Successfully activated.'}, status=status.HTTP_200_OK)
+                return Response({'message': 'Successfully activated.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': 'You already verified your user.'}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError as identifier:
             raise ValidationError('Activation expired.')
         except jwt.exceptions.DecodeError as identifier:
@@ -144,7 +144,7 @@ class RequestPasswordResetEmailOrPhoneOTP(GenericAPIView):
             data = {'email_body': email_body, 'to_email': user.email,
                     'email_subject': 'Reset your passsword'}
             Util.send_email(data)
-            return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+            return Response({'message': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'message': 'something wrong', 'errors': ['user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except:
@@ -199,9 +199,8 @@ class ChangePawordFromProfile(GenericAPIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data,context = {'user': request.user})
-        if serializer.is_valid():
-            return Response({'message': 'Password Change Successfully.'}, status=status.HTTP_200_OK)
-        raise ValidationError('Old Password is not match.')
+        serializer.is_valid(raise_exception=True)
+        return Response({'message': 'Password Change Successfully.', 'data':[]}, status=status.HTTP_200_OK)
 
 class SetNewPasswordAPIView(GenericAPIView):
     serializer_class = SetNewPasswordSerializer
@@ -209,7 +208,7 @@ class SetNewPasswordAPIView(GenericAPIView):
     def patch(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response({'success': True, 'message': 'Password reset success'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Password reset success'}, status=status.HTTP_200_OK)
 
 
 

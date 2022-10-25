@@ -17,14 +17,16 @@ def custom_exception_handler(exc, context):
   if response is not None:
 
     errors = []
-
-    message = response.data.get('detail')
-    print('custom exception:', response.data)
-    if not message:
-        for field, value in response.data.items():
-            errors.append("{} : {}".format(field, " ".join(value)))
-        response.data = {'message': 'Bad Request', 'errors': errors, 'success': False}
+    if isinstance(response.data, list):
+        response.data = {'message': 'Invalid', 'errors': response.data,'success': False}
     else:
-        response.data = {'message': message, 'errors': [message],'success': False}
+        message = response.data.get('detail')
+        print('custom exception:', response.data)
+        if not message:
+            for field, value in response.data.items():
+                errors.append("{} : {}".format(field, " ".join(value)))
+            response.data = {'message': 'Bad Request', 'errors': errors, 'success': False}
+        else:
+            response.data = {'message': message, 'errors': [message],'success': False}
 
   return response
