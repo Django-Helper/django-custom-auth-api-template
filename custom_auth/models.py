@@ -110,4 +110,18 @@ class CustomerProfile(models.Model):
     def __str__(self) -> str:
         return self.name
 
+
+class PhoneOtp(models.Model):
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    phone_number = models.CharField(
+        max_length=16, blank=True, null=True, db_index=True)
+    otp = models.CharField(max_length=4, blank=False, null=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expired_at = models.DateTimeField(db_index=True, blank=False, null=False)
+    is_used = models.BooleanField(default=False, db_index=True)
+
+    def __str__(self):
+        return str(self.otp) if self.otp else "otp is none"
+
     

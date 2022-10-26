@@ -1,14 +1,17 @@
+from ast import Delete
 from dataclasses import field, fields
 from pyexpat import model
 from signal import raise_signal
 from rest_framework import serializers
-from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole
+from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole, PhoneOtp
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.db.models import Q
+from django.utils import timezone
 # from drf_extra_fields.fields import Base64ImageField
 
 
@@ -167,14 +170,12 @@ class LogoutSerializer(serializers.Serializer):
             self.fail('bad_token')
 
 
-class ResetPasswordEmailOrPhoneRequestSerializer(serializers.Serializer):
-    # email_or_phone = serializers.EmailField(min_length=2)
-    email_or_phone = serializers.CharField(max_length=500, required=True)
-
+class ResetPasswordEmailRequestSerializer(serializers.Serializer):
+    email = serializers.CharField(max_length=500, required=True)
     redirect_url = serializers.CharField(max_length=500, required=False)
 
     class Meta:
-        fields = ['email_or_phone']
+        fields = ['email', 'redirect_url']
 
 class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(
@@ -206,16 +207,37 @@ class SetNewPasswordSerializer(serializers.Serializer):
             raise AuthenticationFailed('The reset link is invalid', 401)
 
 
-class VerifyOTPSerializer(serializers.Serializer):
+class VerifyOTPForResetPasswordSerializer(serializers.Serializer):
     otp = serializers.CharField(min_length=4, max_length=6, write_only=True)
-
+    phone_number = serializers.CharField(read_only = True)
     class Meta:
         fields = ['otp']
 
     def validate(self, attrs):
-        if attrs['otp'] != '1234':
-            raise ValidationError('OTP is not match.')
+        if 'otp' not in attrs:
+            raise ValidationError('Otp can not be blank.')
+        try:
+            time = timezone.localtime()
+            otp = PhoneOtp.objects.filter(Q(otp=attrs['otp']) & Q(expired_at__gt=time))[0]
+            otp.is_used = True
+            otp.save()
+            attrs['phone_number'] = otp.phone_number
+            PhoneOtp.objects.filter(is_used = True).delete()
+        except PhoneOtp.DoesNotExist:
+            raise ValidationError('Invalid Otp')
         return attrs
+
+class RequestEmailUpdateSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True, write_only=True)
+    class Meta:
+        fields = ['email']
+    
+    def validate(self, attrs):
+        if 'email' not in attrs:
+            raise ValidationError('Email field can not be blank')
+        if CustomUser.objects.filter(email=attrs['email']).exists():
+            raise ValidationError('Email already exist')
+        return super().validate(attrs)
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(
@@ -251,3 +273,18 @@ class ChangePasswordSerializer(serializers.Serializer):
 #         if not in_cart:
 #             raise serializers.ValidationError('Cart item can not be null.')
 #         return attrs
+
+
+class PhoneOtpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhoneOtp
+        fields = '__all__'
+
+    def validate(self, attrs):
+        if 'phone_number' not in attrs:
+            raise ValidationError('Phone number can not be blank.')
+        try:
+            PhoneOtp.objects.filter(phone_number=attrs['phone_number']).delete()
+        except:
+            raise ValidationError('Something went wrong to send otp.')
+        return super().validate(attrs)

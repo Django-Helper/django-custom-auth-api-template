@@ -1,9 +1,12 @@
+from ast import Return
+import imp
+from signal import raise_signal
 from .models import CustomUser, CustomerProfile
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
-                            LogoutSerializer, ResetPasswordEmailOrPhoneRequestSerializer,
-                            SetNewPasswordSerializer, VerifyOTPSerializer,
-                            ChangePasswordSerializer, CustomerProfilePictureSerializer)
+                            LogoutSerializer, ResetPasswordEmailRequestSerializer,
+                            SetNewPasswordSerializer, VerifyOTPForResetPasswordSerializer,
+                            ChangePasswordSerializer, CustomerProfilePictureSerializer, PhoneOtpSerializer)
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.response import Response
@@ -26,6 +29,8 @@ from django.shortcuts import redirect
 from django.http import HttpResponsePermanentRedirect
 import os
 from .utils import get_registration_verify_email_data
+import random
+from django.utils import timezone
 
 
 class CustomRedirect(HttpResponsePermanentRedirect):
@@ -121,30 +126,30 @@ class LogoutView(GenericAPIView):
             return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RequestPasswordResetEmailOrPhoneOTP(GenericAPIView):
-    serializer_class = ResetPasswordEmailOrPhoneRequestSerializer
+class RequestPasswordResetEmail(GenericAPIView):
+    serializer_class = ResetPasswordEmailRequestSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            email_or_phone = request.data.get('email_or_phone', '')
-            user = CustomUser.objects.get(email=email_or_phone)
+            email = request.data.get('email', '')
+            user = CustomUser.objects.get(email=email)
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             current_site = get_current_site(
-                request=request).domain
+                    request=request).domain
             relativeLink = reverse(
-                'password_reset_confirm_for_email', kwargs={'uidb64': uidb64, 'token': token})
+                    'password_reset_confirm_for_email', kwargs={'uidb64': uidb64, 'token': token})
 
             redirect_url = request.data.get('redirect_url', '')
             absurl = 'http://'+current_site + relativeLink
             email_body = 'Hello, \n Use link below to reset your password  \n' + \
-                absurl+"?redirect_url="+redirect_url
+                    absurl+"?redirect_url="+redirect_url
             data = {'email_body': email_body, 'to_email': user.email,
-                    'email_subject': 'Reset your passsword'}
+                        'email_subject': 'Reset your passsword'}
             Util.send_email(data)
-            return Response({'message': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+            return Response({'message': 'We have sent you a link to reset your password', 'data': []}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'message': 'something wrong', 'errors': ['user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except:
@@ -184,14 +189,60 @@ class PasswordTokenCheckAPIForEmail(GenericAPIView):
             return Response({'message': 'ValueError','errors': ['uidb64 and token is not valid']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class VerifyOTP(GenericAPIView):
-    serializer_class = VerifyOTPSerializer
+class RequestPasswrodResetOTP(GenericAPIView):
+    serializer_class = PhoneOtpSerializer
+    def post(self, request):
+        try:
+            phone_number = request.data.get('phone_number', '')
+            user = CustomUser.objects.get(phone_number=phone_number)
+            customer_name= user.customer_profile.name
+            data = {}
+            data['phone_number'] = phone_number
+            otp = random.sample(range(0, 9), 4)
+            otp = "".join(map(str, otp))
+            data["otp"] = otp
+            data["expired_at"] = timezone.now() + timezone.timedelta(minutes=5)
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            context_data = {f"""প্রিয় {customer_name}, আপনার ভেরিফিকেশন কোডটি {otp}"""}
+            return Response({'message': context_data}, status=status.HTTP_200_OK)
+
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'something wrong', 'errors': ['user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class VerifyOTPForResetPasswrod(GenericAPIView):
+    serializer_class = VerifyOTPForResetPasswordSerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            return Response({'message': 'OTP verify successfully'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'message': 'ValidationError','errors': ['OTP is not match']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        serializer.is_valid(raise_exception=True)
+        phone_number = serializer.data['phone_number']
+        user = CustomUser.objects.get(phone_number=phone_number)
+        uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+        token = PasswordResetTokenGenerator().make_token(user)
+        context_data = {'uid64': uidb64, 'token': token}
+        return Response({'message': 'OTP verify successfully', 'data': context_data}, status=status.HTTP_200_OK)
+
+class RequestPrimaryEmailUpdateEmail(GenericAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    pass
+
+class PrimaryEmailUpdateTokenCheckAPIForEmail(GenericAPIView):
+    pass
+
+class UpdatePrimaryEmail(GenericAPIView):
+    pass
+
+class RequestPrimaryPhoneUpdateOtp(GenericAPIView):
+    pass
+
+class VerifyPrimaryPhoneUpdateOtp(GenericAPIView):
+    pass
+
+class UpdatePrimaryPhone(GenericAPIView):
+    pass
+
 
 class ChangePawordFromProfile(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]

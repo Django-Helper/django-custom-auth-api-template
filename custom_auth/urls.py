@@ -3,8 +3,13 @@ from .views import (Register, VerifyRegisterEmail,
                     LoginView, LogoutView, CustomerCartView, 
                     CustomerFavouriteView, CustomerHistoryView,
                     CustomerProfileView, ListCustomerView, SendVerifyEmail,
-                    RequestPasswordResetEmailOrPhoneOTP, PasswordTokenCheckAPIForEmail,
-                    SetNewPasswordAPIView, VerifyOTP, ChangePawordFromProfile, CustomerProfilePictureView)
+                    RequestPasswordResetEmail, PasswordTokenCheckAPIForEmail,
+                    RequestPasswrodResetOTP, SetNewPasswordAPIView, 
+                    VerifyOTPForResetPasswrod, ChangePawordFromProfile, 
+                    CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
+                    PrimaryEmailUpdateTokenCheckAPIForEmail, UpdatePrimaryEmail,
+                    RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
+                    UpdatePrimaryPhone)
 from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
@@ -22,12 +27,13 @@ urlpatterns = [
     path('customer_profile/', CustomerProfileView.as_view(), name='customer_profile'),
     path('customer_profile_picture/', CustomerProfilePictureView.as_view(), name='customer_profile_picture'),
     path('register_email_verify/', VerifyRegisterEmail.as_view(), name='register_email_verify'),
-    path('request_reset_password_email_or_otp/', RequestPasswordResetEmailOrPhoneOTP.as_view(),
-         name="request_reset_password_email_or_otp"),
+    path('request_reset_password_email/', RequestPasswordResetEmail.as_view(),
+         name="request_reset_password_email"),
     path('password_reset/<uidb64>/<token>/',
          PasswordTokenCheckAPIForEmail.as_view(), name='password_reset_confirm_for_email'),
     path('forgot_password_reset/', SetNewPasswordAPIView.as_view(),
          name='forgot_password_reset'),
-    path('verify_otp/', VerifyOTP.as_view(), name='verify_otp'),
+    path('request_reset_password_otp/', RequestPasswrodResetOTP.as_view(), name='request_reset_password_otp'),
+    path('verify_reset_password_otp/', VerifyOTPForResetPasswrod.as_view(), name='verify_reset_password_otp'),
     path('change_password/', ChangePawordFromProfile.as_view(), name='change_password')
 ]
