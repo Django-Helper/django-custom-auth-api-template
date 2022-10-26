@@ -225,6 +225,8 @@ class VerifyOTPForResetPasswordSerializer(serializers.Serializer):
             PhoneOtp.objects.filter(is_used = True).delete()
         except PhoneOtp.DoesNotExist:
             raise ValidationError('Invalid Otp')
+        except IndexError:
+            raise ValidationError('Invalid Otp')
         return attrs
 
 class RequestEmailUpdateSerializer(serializers.Serializer):
@@ -283,8 +285,6 @@ class PhoneOtpSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if 'phone_number' not in attrs:
             raise ValidationError('Phone number can not be blank.')
-        try:
+        if PhoneOtp.objects.filter(phone_number=attrs['phone_number']).exists():
             PhoneOtp.objects.filter(phone_number=attrs['phone_number']).delete()
-        except:
-            raise ValidationError('Something went wrong to send otp.')
         return super().validate(attrs)

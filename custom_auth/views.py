@@ -121,7 +121,7 @@ class LogoutView(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'message': 'Successfully logout.'},status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': 'Successfully logout.', 'data': []},status=status.HTTP_204_NO_CONTENT)
         else:
             return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -205,11 +205,11 @@ class RequestPasswrodResetOTP(GenericAPIView):
             serializer = self.serializer_class(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            context_data = {f"""প্রিয় {customer_name}, আপনার ভেরিফিকেশন কোডটি {otp}"""}
-            return Response({'message': context_data}, status=status.HTTP_200_OK)
+            context_data = f"Hello, {customer_name}, Your reset password verification code is {otp}. OTP expire after 5 minutes."
+            return Response({'message': context_data, 'data':[]}, status=status.HTTP_200_OK)
 
         except CustomUser.DoesNotExist:
-            return Response({'message': 'something wrong', 'errors': ['user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': 'something wrong', 'errors': ['Invalid json or Phone number can not be blank or user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class VerifyOTPForResetPasswrod(GenericAPIView):
@@ -221,7 +221,7 @@ class VerifyOTPForResetPasswrod(GenericAPIView):
         user = CustomUser.objects.get(phone_number=phone_number)
         uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
         token = PasswordResetTokenGenerator().make_token(user)
-        context_data = {'uid64': uidb64, 'token': token}
+        context_data = {'uidb64': uidb64, 'token': token}
         return Response({'message': 'OTP verify successfully', 'data': context_data}, status=status.HTTP_200_OK)
 
 class RequestPrimaryEmailUpdateEmail(GenericAPIView):
