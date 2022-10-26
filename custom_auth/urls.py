@@ -4,7 +4,7 @@ from .views import (Register, VerifyRegisterEmail,
                     CustomerFavouriteView, CustomerHistoryView,
                     CustomerProfileView, ListCustomerView, SendVerifyEmail,
                     RequestPasswordResetEmailOrPhoneOTP, PasswordTokenCheckAPIForEmail,
-                    SetNewPasswordAPIView, VerifyOTP, ChangePawordFromProfile)
+                    SetNewPasswordAPIView, VerifyOTP, ChangePawordFromProfile, CustomerProfilePictureView)
 from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
@@ -19,7 +19,8 @@ urlpatterns = [
     path('favourite_items/', CustomerFavouriteView.as_view(), name='favourite_items'),
     path('user_history/', CustomerHistoryView.as_view(), name='user_history'),
     path('customers/', ListCustomerView.as_view(), name='customers'),
-    path('customer_profile/<str:username>', CustomerProfileView.as_view(), name='customer_profile'),
+    path('customer_profile/', CustomerProfileView.as_view(), name='customer_profile'),
+    path('customer_profile_picture/', CustomerProfilePictureView.as_view(), name='customer_profile_picture'),
     path('register_email_verify/', VerifyRegisterEmail.as_view(), name='register_email_verify'),
     path('request_reset_password_email_or_otp/', RequestPasswordResetEmailOrPhoneOTP.as_view(),
          name="request_reset_password_email_or_otp"),

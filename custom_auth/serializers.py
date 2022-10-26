@@ -1,4 +1,5 @@
 from dataclasses import field, fields
+from pyexpat import model
 from signal import raise_signal
 from rest_framework import serializers
 from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole
@@ -8,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+# from drf_extra_fields.fields import Base64ImageField
 
 
 class AdminRoleSerializers(serializers.ModelSerializer):
@@ -22,9 +24,26 @@ class AdminProfileSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 class CustomerProfileSerializers(serializers.ModelSerializer):
+    # profile_picture = Base64ImageField(required=False)
     class Meta:
         model = CustomerProfile
         fields = '__all__'
+        # exclude = ('profile_picture', )
+
+class CustomerProfilePictureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerProfile
+        fields = ['profile_picture']
+
+    def validate(self, attrs):
+        if 'profile_picture' not in attrs:
+            raise ValidationError('Profile picture can not be blank')
+        if attrs['profile_picture'] is None:
+            raise ValidationError('Profile picture can not be blank')
+        return attrs
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
 class CustomUserDetailsSerializer(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)

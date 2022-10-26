@@ -47,7 +47,7 @@ REST_FRAMEWORK = {
                 'rest_framework.renderers.BrowsableAPIRenderer'),
     # Add cutom exception handler
     'EXCEPTION_HANDLER': 'utils.custom_exception.custom_exception_handler',
-    'NON_FIELD_ERRORS': 'error'
+    'NON_FIELD_ERRORS_KEY': 'error',
 }
 
 SIMPLE_JWT = {
@@ -166,7 +166,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'), ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_URL = '/upload/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "upload")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

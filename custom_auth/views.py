@@ -3,7 +3,7 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             EmailVerificationSerializer, LoginSerializer, 
                             LogoutSerializer, ResetPasswordEmailOrPhoneRequestSerializer,
                             SetNewPasswordSerializer, VerifyOTPSerializer,
-                            ChangePasswordSerializer)
+                            ChangePasswordSerializer, CustomerProfilePictureSerializer)
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.response import Response
@@ -217,14 +217,23 @@ class SetNewPasswordAPIView(GenericAPIView):
 class CustomerProfileView(RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CustomUserDetailsSerializer
-    lookup_field = 'username'
 
     def get_object(self):
-        username = self.kwargs['username']
-        return get_object_or_404(CustomUser, username=username)
+        return get_object_or_404(CustomUser, id=self.request.user.id)
     
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+class CustomerProfilePictureView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomerProfilePictureSerializer
+
+    def get_object(self):
+        return get_object_or_404(CustomerProfile, user=self.request.user)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
 
 class ListCustomerView(ListAPIView):
     queryset = CustomUser.objects.filter(user_type=1)
