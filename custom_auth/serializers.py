@@ -12,6 +12,7 @@ from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnico
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.db.models import Q
 from django.utils import timezone
+import os
 # from drf_extra_fields.fields import Base64ImageField
 
 
@@ -27,11 +28,9 @@ class AdminProfileSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 class CustomerProfileSerializers(serializers.ModelSerializer):
-    # profile_picture = Base64ImageField(required=False)
     class Meta:
         model = CustomerProfile
         fields = '__all__'
-        # exclude = ('profile_picture', )
 
 class CustomerProfilePictureSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,6 +45,7 @@ class CustomerProfilePictureSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
+        instance.profile_picture.delete(save=True) # delete old profile picture
         return super().update(instance, validated_data)
 
 class CustomUserDetailsSerializer(serializers.ModelSerializer):

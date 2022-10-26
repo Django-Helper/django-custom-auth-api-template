@@ -98,7 +98,7 @@ class CustomerProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
     postal_code = models.CharField(max_length=255, blank=True)
     country = models.CharField(max_length=255, blank=True)
-    profile_picture = models.ImageField(upload_to='upload/customer_profile_picture/', blank=True)
+    profile_picture = models.ImageField(upload_to='customer_profile_picture/', blank=True)
     in_cart = models.JSONField(default=list)
     favourites = models.JSONField(default=list)
     save_address = models.JSONField(default=list)
