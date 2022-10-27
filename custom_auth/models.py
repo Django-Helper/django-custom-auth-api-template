@@ -104,6 +104,8 @@ class CustomerProfile(models.Model):
     save_address = models.JSONField(default=list)
     save_cards = models.JSONField(default=list)
     history = models.JSONField(default=list)
+    email_history = models.JSONField(default=list)
+    phone_number_history = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

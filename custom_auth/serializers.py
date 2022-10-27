@@ -1,7 +1,9 @@
 from ast import Delete
 from dataclasses import field, fields
+import email
 from pyexpat import model
 from signal import raise_signal
+from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
 from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole, PhoneOtp
 from django.contrib import auth
@@ -13,6 +15,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.db.models import Q
 from django.utils import timezone
 import os
+from django.core.validators import validate_email
 # from drf_extra_fields.fields import Base64ImageField
 
 
@@ -288,3 +291,45 @@ class PhoneOtpSerializer(serializers.ModelSerializer):
         if PhoneOtp.objects.filter(phone_number=attrs['phone_number']).exists():
             PhoneOtp.objects.filter(phone_number=attrs['phone_number']).delete()
         return super().validate(attrs)
+
+
+class RequestPrimaryEmailUpdateEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required = True)
+    redirect_url = serializers.CharField(required = True)
+    class Meta:
+        fields = "__all__"
+    
+    def validate_email(self, value):
+        if value is None:
+            raise ValidationError('Email can not be blank')
+        if CustomUser.objects.filter(email=value).exists():
+            raise ValidationError('Email already exist')
+        try:
+            validate_email(value)
+        except ValidationError as e:
+            raise ValidationError('Email is not valid')
+        else:
+            return value
+        
+    
+    def validate_redirect_url(self, value):
+        if value is None:
+            raise ValidationError('Redirect url can not be blank')
+        return value
+
+class RequestPrimaryPhoneOtpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhoneOtp
+        fields = "__all__"
+
+    
+    def validate_phone_number(self, value):
+        if value is None:
+            raise ValidationError('Phone Number can not be blank')
+        if CustomUser.objects.filter(phone_number = value).exists():
+            raise ValidationError('Phone number already exit')
+        if not value.isnumeric():
+            raise ValidationError('Invalid Phone number')
+        if PhoneOtp.objects.filter(phone_number=value).exists():
+            PhoneOtp.objects.filter(phone_number=value).delete()
+        return value
