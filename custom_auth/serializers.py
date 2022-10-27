@@ -333,3 +333,19 @@ class RequestPrimaryPhoneOtpSerializer(serializers.ModelSerializer):
         if PhoneOtp.objects.filter(phone_number=value).exists():
             PhoneOtp.objects.filter(phone_number=value).delete()
         return value
+
+class LoginOTPRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhoneOtp
+        fields = "__all__"
+
+    def validate(self, attrs):
+        if 'phone_number' not in attrs and 'email' not in attrs:
+            raise ValidationError('Phone number or email can not be blank.')
+        if 'phone_number' in attrs:
+            if PhoneOtp.objects.filter(phone_number=attrs['phone_number']).exists():
+                PhoneOtp.objects.filter(phone_number=attrs['phone_number']).delete()
+        if 'email' in attrs:
+            if PhoneOtp.objects.filter(email=attrs['email']).exists():
+                PhoneOtp.objects.filter(email=attrs['email']).delete()
+        return super().validate(attrs)

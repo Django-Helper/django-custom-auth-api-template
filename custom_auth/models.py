@@ -1,6 +1,7 @@
 import email
 from email.policy import default
 from enum import unique
+from pyexpat import model
 from unicodedata import name
 from unittest.util import _MAX_LENGTH
 import uuid
@@ -118,6 +119,7 @@ class PhoneOtp(models.Model):
         primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     phone_number = models.CharField(
         max_length=16, blank=True, null=True, db_index=True)
+    email = models.EmailField(_('email address'), db_index=True, blank=True, null=True)
     otp = models.CharField(max_length=4, blank=False, null=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expired_at = models.DateTimeField(db_index=True, blank=False, null=False)

@@ -8,7 +8,8 @@ from .views import (Register, VerifyRegisterEmail,
                     VerifyOTPForResetPasswrod, ChangePawordFromProfile, 
                     CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
                     PrimaryEmailUpdateTokenCheckAPIForEmail,
-                    RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp)
+                    RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
+                    LoginOTPRequest)
 from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
@@ -16,6 +17,7 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path('register/', Register.as_view(), name="register"),
     path('login/', LoginView.as_view(), name='login'),
+    path('request_login_otp/', LoginOTPRequest.as_view(), name='request_login_otp'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('send_verify_email/', SendVerifyEmail.as_view(), name='send_verify_email'),
     path('token_refresh/', TokenRefreshView.as_view(), name='toekn_refresh'),
@@ -39,4 +41,5 @@ urlpatterns = [
     path('primary_email_update/<uidb64>/<emailb64>/<token>/', PrimaryEmailUpdateTokenCheckAPIForEmail.as_view(), name='primary_email_update_confirm_email'),
     path('request_primary_phone_update_otp/', RequestPrimaryPhoneUpdateOtp.as_view(), name='request_primary_phone_update_otp'),
     path('verify_primary_phone_update_otp/', VerifyPrimaryPhoneUpdateOtp.as_view(), name='verify_primary_phone_update_otp'),
+
 ]

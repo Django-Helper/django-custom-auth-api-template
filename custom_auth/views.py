@@ -1,3 +1,4 @@
+from re import T
 from .models import CustomUser, CustomerProfile
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
@@ -5,7 +6,7 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             SetNewPasswordSerializer, VerifyOTPForResetPasswordSerializer,
                             ChangePasswordSerializer, CustomerProfilePictureSerializer, 
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
-                            RequestPrimaryPhoneOtpSerializer)
+                            RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer)
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.response import Response
@@ -111,6 +112,60 @@ class LoginView(GenericAPIView):
         else:
             return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+class LoginOTPRequest(GenericAPIView):
+    serializer_class = LoginOTPRequestSerializer
+    def post(self, request):
+        try:
+            email_or_phone = request.data.get('email_or_phone', '')
+            if email_or_phone:
+                try:
+                    user = CustomUser.objects.get(email=email_or_phone)
+                    customer_name= user.customer_profile.name
+                    data = {}
+                    data['email'] = email_or_phone
+                    otp = random.sample(range(0, 9), 4)
+                    otp = "".join(map(str, otp))
+                    data["otp"] = otp
+                    data["expired_at"] = timezone.now() + timezone.timedelta(minutes=5)
+                    serializer = self.serializer_class(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                    context_data = f"Hello, {customer_name}, Your login OTP code is {otp}. OTP expire after 5 minutes."
+                    data = {'email_body': context_data, 'to_email': email_or_phone,
+                        'email_subject': 'Login OTP'}
+                    try:
+                        Util.send_email(data)
+                        return Response({'message': 'We have sent you login OTP code in your email.', 'data': []}, status=status.HTTP_200_OK)
+                    except:
+                        return Response({"message": 'Network Error', 'errors': ['can not send login OTP email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                except CustomUser.DoesNotExist:
+                    try:
+                        user=CustomUser.objects.get(phone_number=email_or_phone) 
+                        customer_name= user.customer_profile.name
+                        data = {}
+                        data['phone_number'] = email_or_phone
+                        otp = random.sample(range(0, 9), 4)
+                        otp = "".join(map(str, otp))
+                        data["otp"] = otp
+                        data["expired_at"] = timezone.now() + timezone.timedelta(minutes=5)
+                        serializer = self.serializer_class(data=data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save()
+                        context_data = f"Hello, {customer_name}, Your login OTP code is {otp}. OTP expire after 5 minutes."
+                        return Response({'message': context_data, 'data':[]}, status=status.HTTP_200_OK)
+                    except CustomUser.DoesNotExist:
+                        return Response({'message': 'something wrong', 'errors': ['User does not exit']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response({'message': 'something wrong', 'errors': ['Invalid json or email_or_phone can not be blank.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'something wrong', 'errors': ['Invalid json or Phone number can not be blank or user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class LoginOTPVerify(GenericAPIView):
+    pass
+
 class LogoutView(GenericAPIView):
     serializer_class = LogoutSerializer
 
@@ -147,8 +202,11 @@ class RequestPasswordResetEmail(GenericAPIView):
                     absurl+"?redirect_url="+redirect_url
             data = {'email_body': email_body, 'to_email': user.email,
                         'email_subject': 'Reset your passsword'}
-            Util.send_email(data)
-            return Response({'message': 'We have sent you a link to reset your password', 'data': []}, status=status.HTTP_200_OK)
+            try:
+                Util.send_email(data)
+                return Response({'message': 'We have sent you a link to reset your password', 'data': []}, status=status.HTTP_200_OK)
+            except:
+                return Response({"message": 'Network Error', 'errors': ['can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except CustomUser.DoesNotExist:
             return Response({'message': 'something wrong', 'errors': ['user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except:
