@@ -349,3 +349,59 @@ class LoginOTPRequestSerializer(serializers.ModelSerializer):
             if PhoneOtp.objects.filter(email=attrs['email']).exists():
                 PhoneOtp.objects.filter(email=attrs['email']).delete()
         return super().validate(attrs)
+
+class LoginOTPVerifySerializer(serializers.ModelSerializer):
+    otp = serializers.CharField(min_length=4, max_length=6, write_only=True, required=True)
+    username = serializers.CharField(read_only=True)
+    email_or_phone = serializers.CharField(write_only = True, required=True)
+    class Meta:
+        model = CustomUser
+        fields = ['otp']
+        fields = ['otp', 'email_or_phone' ,'email', 'username', 'phone_number', 'is_verified', 'tokens']
+
+    def validate(self, attrs):
+        if 'otp' not in attrs:
+            raise ValidationError('Otp can not be blank.')
+        if 'email_or_phone' not in attrs:
+            raise ValidationError('Email or phone can not be blank')
+        try:
+            time = timezone.localtime()
+            otp = PhoneOtp.objects.filter(Q(otp=attrs['otp']) & Q(expired_at__gt=time) & Q(is_used=False))[0]
+            if otp.phone_number and attrs['email_or_phone'].isnumeric():
+                try:
+                    user = CustomUser.objects.get(phone_number=otp.phone_number)
+                    otp.is_used = True
+                    otp.save()
+                    PhoneOtp.objects.filter(is_used = True).delete()
+                    print('login with phone')
+                    return {
+                        'email': user.email,
+                        'phone_number': user.phone_number,
+                        'username': user.username,
+                        'is_verified': user.is_verified,
+                        'tokens': user.tokens
+                    }
+                except CustomUser.DoesNotExist:
+                    raise ValidationError('User does not exit')
+            elif otp.email and not attrs['email_or_phone'].isnumeric():
+                try:
+                    user = CustomUser.objects.get(email=otp.email)
+                    otp.is_used = True
+                    otp.save()
+                    PhoneOtp.objects.filter(is_used = True).delete()
+                    print('login with email')
+                    return {
+                        'email': user.email,
+                        'phone_number': user.phone_number,
+                        'username': user.username,
+                        'is_verified': user.is_verified,
+                        'tokens': user.tokens
+                    }
+                except CustomUser.DoesNotExist:
+                    raise ValidationError('User does not exit')
+            else:
+                raise ValidationError('User does not exit')
+        except PhoneOtp.DoesNotExist:
+            raise ValidationError('Invalid Otp')
+        except IndexError:
+            raise ValidationError('Invalid Otp')

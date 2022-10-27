@@ -6,7 +6,8 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             SetNewPasswordSerializer, VerifyOTPForResetPasswordSerializer,
                             ChangePasswordSerializer, CustomerProfilePictureSerializer, 
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
-                            RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer)
+                            RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
+                            LoginOTPVerifySerializer)
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.response import Response
@@ -163,8 +164,12 @@ class LoginOTPRequest(GenericAPIView):
 
 
 
-class LoginOTPVerify(GenericAPIView):
-    pass
+class LoginWithOTP(GenericAPIView):
+    serializer_class = LoginOTPVerifySerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class LogoutView(GenericAPIView):
     serializer_class = LogoutSerializer

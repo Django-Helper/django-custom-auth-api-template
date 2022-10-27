@@ -9,7 +9,7 @@ from .views import (Register, VerifyRegisterEmail,
                     CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
                     PrimaryEmailUpdateTokenCheckAPIForEmail,
                     RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
-                    LoginOTPRequest)
+                    LoginOTPRequest, LoginWithOTP)
 from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
@@ -18,6 +18,7 @@ urlpatterns = [
     path('register/', Register.as_view(), name="register"),
     path('login/', LoginView.as_view(), name='login'),
     path('request_login_otp/', LoginOTPRequest.as_view(), name='request_login_otp'),
+    path('login_with_otp/', LoginWithOTP.as_view(), name='login_with_otp'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('send_verify_email/', SendVerifyEmail.as_view(), name='send_verify_email'),
     path('token_refresh/', TokenRefreshView.as_view(), name='toekn_refresh'),
