@@ -318,7 +318,20 @@ class RequestPrimaryPhoneUpdateOtp(GenericAPIView):
             return Response({'message': 'something wrong', 'errors': ['Invalid json or Phone number can not be blank or user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class VerifyPrimaryPhoneUpdateOtp(GenericAPIView):
-    pass
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = VerifyOTPForResetPasswordSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        phone_number = serializer.data['phone_number']
+        user = request.user
+        old_phone_number = user.phone_number
+        user.phone_number = phone_number
+        user.save()
+        customer_profile = CustomerProfile.objects.get(user=user)
+        customer_profile.phone_number_history.append({'phone_number': old_phone_number})
+        customer_profile.save()
+        return Response({'message': 'OTP verify successfully and primary phone number update successfully', 'data': []}, status=status.HTTP_200_OK)
 
 
 
