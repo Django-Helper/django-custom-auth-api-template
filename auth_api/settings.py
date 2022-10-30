@@ -76,7 +76,8 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # local
-    'custom_auth'
+    'custom_auth',
+    'social_auth'
 ]
 
 MIDDLEWARE = [

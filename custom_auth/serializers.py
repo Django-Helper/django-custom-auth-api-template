@@ -76,7 +76,7 @@ class CustomUserSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'customer_profile', 'admin_profile']
+        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'auth_providers', 'customer_profile', 'admin_profile']
 
     def validate_password(self, value):
         if len(value) < 8:
@@ -93,6 +93,8 @@ class CustomUserSerializers(serializers.ModelSerializer):
         else:
             user = CustomUser.objects.create_user(validated_data.pop('email'), validated_data.pop('password'), 
             validated_data.pop('username'), user_type, **validated_data)
+        user.auth_providers.append('email')
+        user.save()
         if user_type == 1:
             CustomerProfile.objects.create(user=user, **customer_profile_data)
         else:
@@ -128,7 +130,7 @@ class LoginSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'phone_number', 'password', 'is_verified', 'tokens']
+        fields = ['email', 'username', 'phone_number', 'password', 'is_verified', 'tokens', 'auth_providers']
 
     
     def validate(self, attrs):
@@ -152,6 +154,7 @@ class LoginSerializer(serializers.ModelSerializer):
             'phone_number': user.phone_number,
             'username': user.username,
             'is_verified': user.is_verified,
+            'providers': user.auth_providers,
             'tokens': user.tokens
         }
 

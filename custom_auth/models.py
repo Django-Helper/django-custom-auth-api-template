@@ -31,7 +31,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True, db_index=True)
 
     user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES)
-
+    auth_providers = models.JSONField(default=list)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
