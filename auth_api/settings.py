@@ -53,7 +53,7 @@ REST_FRAMEWORK = {
 PASSWORD_RESET_TIMEOUT = 300
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -77,7 +77,8 @@ INSTALLED_APPS = [
 
     # local
     'custom_auth',
-    'social_auth'
+    'social_auth',
+    'country_app',
 ]
 
 MIDDLEWARE = [

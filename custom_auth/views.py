@@ -48,8 +48,10 @@ class Register(GenericAPIView):
                 user_type = 1
             elif user_type == 'admin':
                 user_type = 2
-            else:
+            elif user_type == 'super admin':
                 user_type = 3
+            else:
+                raise ValidationError('User type must be customer,admin or super admin.')
             request.data['user_type'] = user_type
 
         serializer = self.serializer_class(data=request.data)

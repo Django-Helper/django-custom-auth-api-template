@@ -12,9 +12,11 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
 
     def validate_auth_token(self, auth_token):
         user_data = Google.validate(auth_token)
+        print('google:', user_data)
         try:
             user_data["sub"]
         except Exception as e:
+            print('exception:', e)
             raise serializers.ValidationError(
                 "The token is invalid or expired. Please login again."
             )
@@ -29,9 +31,7 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
         # )
 
         google_client = [
-            "187084527164-a5mg5g9dh6k6022uo1elhciaea49lm2e.apps.googleusercontent.com",
-            "187084527164-2ten6tf1pf9sshiah762aghuhofj2lc8.apps.googleusercontent.com",
-            "187084527164-tma96b5qiakd594kf2u5mjt61vvnfoe4.apps.googleusercontent.com",
+            "489042626314-gjv8aespnd3iskhog5s2ic1dorvprr82.apps.googleusercontent.com"
         ]
 
         if (user_data["aud"] not in google_client):
@@ -59,7 +59,7 @@ class FacebookSocialAuthSerializer(serializers.Serializer):
     def validate_auth_token(self, auth_token):
 
         user_data = Facebook.validate(auth_token)
-
+        print('facebook:', user_data)
         try:
             user_email = user_data["email"]
             user_fullname = user_data["name"]

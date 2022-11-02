@@ -8,10 +8,11 @@ class Google:
     def validate(auth_token):
 
         try:
+            print('google auth token validation')
             idinfo = id_token.verify_oauth2_token(
                 auth_token, google_auth_request.Request()
             )
-
+            print('info',idinfo)
             if "accounts.google.com" in idinfo["iss"]:
                 return idinfo
 
@@ -31,11 +32,13 @@ class Facebook:
     def validate(auth_token):
 
         try:
+            print('facebook auth token')
             graph = facebook.GraphAPI(access_token=auth_token)
             profile = graph.request("/me?fields=name,email,picture")
 
             return profile
-        except:
+        except Exception as e:
+            print('facebook exception:',e)
             return "The token is invalid or expired."
 
 
@@ -55,6 +58,7 @@ class Linkedin:
             headers["Accept"] = "*/*"
             resp_name = requests.get(url, headers=headers)
             resp_dict_name = resp_name.json()
+            print(resp_dict_name)
             resp_fullname = (
                 resp_dict_name["localizedFirstName"]
                 + " "
@@ -68,10 +72,12 @@ class Linkedin:
             headers["Authorization"] = f"Bearer {auth_token}"
             resp_mail = requests.get(url, headers=headers)
             resp_dict_mail = resp_mail.json()
+            print(resp_dict_mail)
             resp_mail = resp_dict_mail["elements"][0]["handle~"]["emailAddress"]
             
 
             resp_data = {"name": resp_fullname, "email": resp_mail, "picture": None}
+            print(resp_data)
             return resp_data
 
         except:

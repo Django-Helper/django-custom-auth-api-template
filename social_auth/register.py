@@ -17,7 +17,7 @@ def generate_username(name):
 def register_social_user(provider, user_email, user_fullname, user_image):
 
     try:
-        customer = CustomUser.objects.filter(email = user_email)
+        customer = CustomUser.objects.get(email = user_email)
         if provider not in customer.auth_providers:
             customer.auth_providers.append(provider)
             customer.save()
@@ -33,11 +33,12 @@ def register_social_user(provider, user_email, user_fullname, user_image):
 
     except CustomUser.DoesNotExist:
         social_secret = "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"
-        customer = CustomUser.objects.create_user(user_email, social_secret, generate_username(user_fullname), 1)
+        username = generate_username(user_fullname)
+        customer = CustomUser.objects.create_user(user_email, social_secret, username, 1)
         customer.is_verified = True
         customer.auth_providers.append(provider)
         customer.save()
-        new_user = authenticate(email=user_email, password=social_secret)
+        new_user = authenticate(username=user_email, password=social_secret)
         return {
             'email': new_user.email,
             'phone_number': new_user.phone_number,
