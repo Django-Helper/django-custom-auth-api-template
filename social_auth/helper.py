@@ -35,7 +35,7 @@ class Facebook:
             print('facebook auth token')
             graph = facebook.GraphAPI(access_token=auth_token)
             profile = graph.request("/me?fields=name,email,picture")
-
+            print('facebook profile:', profile)
             return profile
         except Exception as e:
             print('facebook exception:',e)
@@ -104,3 +104,35 @@ class Apple:
         except Exception as e:
             # print('Error: ', str(e))
             return "The token is invalid or expired."
+
+import twitter
+import os
+from rest_framework import serializers
+
+class Twitter:
+
+    @staticmethod
+    def validate(access_token_key, access_token_secret):
+        """
+        validate_twitter_auth_tokens methods returns a twitter
+        user profile info
+        """
+
+        consumer_api_key = "nYYoQcMmcKGhwvd5j5rhNxnWJ"
+        consumer_api_secret_key = "AH15YeDM3bUK1eLIhJVr8kSkEQyearxdbl6zVAUqoPYrFabfeK"
+
+        try:
+            api = twitter.Api(
+                consumer_key=consumer_api_key,
+                consumer_secret=consumer_api_secret_key,
+                access_token_key=access_token_key,
+                access_token_secret=access_token_secret
+            )
+
+            user_profile_info = api.VerifyCredentials(include_email=True)
+            return user_profile_info.__dict__
+
+        except Exception as identifier:
+
+            raise serializers.ValidationError({
+                "tokens": ["The tokens are invalid or expired"]})

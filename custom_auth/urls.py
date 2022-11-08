@@ -9,7 +9,7 @@ from .views import (Register, VerifyRegisterEmail,
                     CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
                     PrimaryEmailUpdateTokenCheckAPIForEmail,
                     RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
-                    LoginOTPRequest, LoginWithOTP)
+                    LoginOTPRequest, LoginWithOTP, SendEmailView)
 from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
@@ -42,5 +42,6 @@ urlpatterns = [
     path('primary_email_update/<uidb64>/<emailb64>/<token>/', PrimaryEmailUpdateTokenCheckAPIForEmail.as_view(), name='primary_email_update_confirm_email'),
     path('request_primary_phone_update_otp/', RequestPrimaryPhoneUpdateOtp.as_view(), name='request_primary_phone_update_otp'),
     path('verify_primary_phone_update_otp/', VerifyPrimaryPhoneUpdateOtp.as_view(), name='verify_primary_phone_update_otp'),
+    path('send_email_template/', SendEmailView.as_view(), name='send_email_template')
 
 ]

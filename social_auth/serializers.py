@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .helper import Google, Facebook, Linkedin, Apple
+from .helper import Google, Facebook, Linkedin, Apple, Twitter
 from .register import register_social_user
 import os
 from rest_framework.exceptions import AuthenticationFailed
@@ -31,7 +31,10 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
         # )
 
         google_client = [
-            "489042626314-gjv8aespnd3iskhog5s2ic1dorvprr82.apps.googleusercontent.com"
+            "489042626314-gjv8aespnd3iskhog5s2ic1dorvprr82.apps.googleusercontent.com",
+            "489042626314-91muvshviujgl72n9pdgsc8vlt7a2sh8.apps.googleusercontent.com",
+            "489042626314-gjv8aespnd3iskhog5s2ic1dorvprr82.apps.googleusercontent.com",
+            "489042626314-vln96dg7jd1ht2aep366kcbknllkt1dh.apps.googleusercontent.com",
         ]
 
         if (user_data["aud"] not in google_client):
@@ -126,4 +129,36 @@ class AppleSocialAuthSerializer(serializers.Serializer):
 
             raise serializers.ValidationError(
                 "The token  is invalid or expired. Please login again."
+            )
+
+class TwitterAuthSerializer(serializers.Serializer):
+    """Handles serialization of twitter related data"""
+    access_token_key = serializers.CharField()
+    access_token_secret = serializers.CharField()
+
+    def validate(self, attrs):
+
+        access_token_key = attrs.get('access_token_key')
+        access_token_secret = attrs.get('access_token_secret')
+
+        user_data = Twitter.validate(
+            access_token_key, access_token_secret)
+
+        # print('twitter user info:', user_data)
+
+        try:
+            user_email = user_data["email"]
+            user_fullname = user_data["name"]
+            user_image = user_data["profile_image_url_https"]
+            provider = "twitter"
+
+            return register_social_user(
+                provider=provider,
+                user_email=user_email,
+                user_fullname=user_fullname,
+                user_image=user_image,
+            )
+        except:
+            raise serializers.ValidationError(
+                'The tokens are invalid or expired. Please login again.'
             )

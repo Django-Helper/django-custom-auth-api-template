@@ -32,6 +32,8 @@ from .utils import get_registration_verify_email_data
 import random
 from django.utils import timezone
 from .tokens import PrimaryEmailUpdateTokenGenerator, PrimaryPhoneUpdateTokenGenerator
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 
 class CustomRedirect(HttpResponsePermanentRedirect):
@@ -499,4 +501,31 @@ class CustomerHistoryView(GenericAPIView):
             return Response({'data': customer.history}, status=status.HTTP_200_OK)
         except KeyError as e:
             raise ValidationError('Invalid history_items json.')
+
+
+class SendEmailView(GenericAPIView):
+    def post(self,request):
+        data = request.data
+        subscriber_name = data["subscriber_name"]
+        subscriber_email = data["subscriber_email"]
+        subscriber_phone = data["subscriber_phone"]
+        subscriber_message = data["subscriber_query"]
+
+        html_content = render_to_string('email_template.html', 
+            {'subscriber_name': subscriber_name, 
+            'subscriber_email': subscriber_email, 
+            'subscriber_phone': subscriber_phone, 
+            'subscriber_message': subscriber_message}
+            )
+        text_content = strip_tags(html_content)
+
+        data = {
+            "email_body": text_content,
+            "to_email": "rabbi@adnanfoundation.com",
+            "email_subject": "From AGL Authentication",
+        }
+        Util.send_email_with_template(html_content, data)
+        
+        return Response("ding dong", status=status.HTTP_200_OK)
+
 
