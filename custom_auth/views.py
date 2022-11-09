@@ -35,6 +35,8 @@ from .tokens import PrimaryEmailUpdateTokenGenerator, PrimaryPhoneUpdateTokenGen
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
+from .tasks import send_email
+
 
 class CustomRedirect(HttpResponsePermanentRedirect):
 
@@ -63,7 +65,7 @@ class Register(GenericAPIView):
             user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
             data = get_registration_verify_email_data(user, request)
             try:
-                Util.send_email(data)
+                send_email(data)
                 context = {'message': 'registration successfull. For verfiy check email and verfiy. Verify email expired within 30 minutes'}
                 return Response(context, status=status.HTTP_201_CREATED)
             except:
@@ -78,7 +80,7 @@ class SendVerifyEmail(APIView):
         if not user.is_verified:
             data = get_registration_verify_email_data(user, request)
             try:
-                Util.send_email(data)
+                send_email(data)
                 context = {'message': 'Verify email send successfully. For verfiy check email and verfiy. Verify email expired within 30 minutes.'}
                 return Response(context, status=status.HTTP_200_OK)
             except:
@@ -139,7 +141,7 @@ class LoginOTPRequest(GenericAPIView):
                     data = {'email_body': context_data, 'to_email': email_or_phone,
                         'email_subject': 'Login OTP'}
                     try:
-                        Util.send_email(data)
+                        send_email(data)
                         return Response({'message': 'We have sent you login OTP code in your email.', 'data': []}, status=status.HTTP_200_OK)
                     except:
                         return Response({"message": 'Network Error', 'errors': ['can not send login OTP email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -212,7 +214,7 @@ class RequestPasswordResetEmail(GenericAPIView):
             data = {'email_body': email_body, 'to_email': user.email,
                         'email_subject': 'Reset your passsword'}
             try:
-                Util.send_email(data)
+                send_email(data)
                 return Response({'message': 'We have sent you a link to reset your password', 'data': []}, status=status.HTTP_200_OK)
             except:
                 return Response({"message": 'Network Error', 'errors': ['can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -314,9 +316,8 @@ class RequestPrimaryEmailUpdateEmail(GenericAPIView):
                     absurl+"?redirect_url="+redirect_url
             data = {'email_body': email_body, 'to_email': email,
                         'email_subject': 'Reset your primary email'}
-            Util.send_email(data)
             try:
-                Util.send_email(data)
+                send_email(data)
                 return Response({'message': 'We have sent you a link to reset your primary email', 'data': []}, status=status.HTTP_200_OK)
             except:
                 return Response({"message": 'Network Error', 'errors': ['Can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
