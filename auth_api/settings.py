@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import sys
+import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -74,12 +75,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'drf_yasg',
-    'django_celery_results',
 
     # local
     'custom_auth',
     'social_auth',
     'country_app',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -128,11 +129,11 @@ DATABASES = {
 
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME':'test_auth_db',
-        'USER': 'agl',
-        'PASSWORD': '12345',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', default=''),
+        'USER': os.environ.get('DB_USERNAME', default=''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', default=''),
+        'HOST': os.environ.get('DB_HOST', default=''),
+        'PORT': os.environ.get('DB_PORT', default=''),
     }
 }
 
@@ -188,5 +189,19 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = '587'
-EMAIL_HOST_USER = 'jasrabbi50@gmail.com'
-EMAIL_HOST_PASSWORD = 'lnajlvwabmcvoakc'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', default='')
+
+
+
+# CELERY SETTINGS
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Dhaka'
+
+CELERY_RESULT_BACKEND = 'django-db'
+
+# CELERY BEAT SETTINGS
+# CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

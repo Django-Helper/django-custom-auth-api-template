@@ -31,10 +31,9 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
         # )
 
         google_client = [
-            "489042626314-gjv8aespnd3iskhog5s2ic1dorvprr82.apps.googleusercontent.com",
-            "489042626314-91muvshviujgl72n9pdgsc8vlt7a2sh8.apps.googleusercontent.com",
-            "489042626314-gjv8aespnd3iskhog5s2ic1dorvprr82.apps.googleusercontent.com",
-            "489042626314-vln96dg7jd1ht2aep366kcbknllkt1dh.apps.googleusercontent.com",
+            os.environ.get('GOOGLE_CLIENT_ID_ONE', default=''),
+            os.environ.get('GOOGLE_CLIENT_ID_TWO', default=''),
+            os.environ.get('GOOGLE_CLIENT_ID_THREE', default=''),
         ]
 
         if (user_data["aud"] not in google_client):

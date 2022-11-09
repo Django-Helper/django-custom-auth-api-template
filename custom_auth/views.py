@@ -65,7 +65,8 @@ class Register(GenericAPIView):
             user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
             data = get_registration_verify_email_data(user, request)
             try:
-                send_email(data)
+                kwargs = {'data': data}
+                send_email.delay(**kwargs)
                 context = {'message': 'registration successfull. For verfiy check email and verfiy. Verify email expired within 30 minutes'}
                 return Response(context, status=status.HTTP_201_CREATED)
             except:
@@ -80,7 +81,8 @@ class SendVerifyEmail(APIView):
         if not user.is_verified:
             data = get_registration_verify_email_data(user, request)
             try:
-                send_email(data)
+                kwargs = {'data': data}
+                send_email.delay(**kwargs)
                 context = {'message': 'Verify email send successfully. For verfiy check email and verfiy. Verify email expired within 30 minutes.'}
                 return Response(context, status=status.HTTP_200_OK)
             except:
@@ -141,9 +143,11 @@ class LoginOTPRequest(GenericAPIView):
                     data = {'email_body': context_data, 'to_email': email_or_phone,
                         'email_subject': 'Login OTP'}
                     try:
-                        send_email(data)
+                        kwargs = {'data': data}
+                        send_email.delay(**kwargs)
                         return Response({'message': 'We have sent you login OTP code in your email.', 'data': []}, status=status.HTTP_200_OK)
-                    except:
+                    except Exception as e:
+                        print('email exception:', e)
                         return Response({"message": 'Network Error', 'errors': ['can not send login OTP email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 except CustomUser.DoesNotExist:
                     try:
@@ -214,7 +218,8 @@ class RequestPasswordResetEmail(GenericAPIView):
             data = {'email_body': email_body, 'to_email': user.email,
                         'email_subject': 'Reset your passsword'}
             try:
-                send_email(data)
+                kwargs = {'data': data}
+                send_email.delay(**kwargs)
                 return Response({'message': 'We have sent you a link to reset your password', 'data': []}, status=status.HTTP_200_OK)
             except:
                 return Response({"message": 'Network Error', 'errors': ['can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -317,7 +322,8 @@ class RequestPrimaryEmailUpdateEmail(GenericAPIView):
             data = {'email_body': email_body, 'to_email': email,
                         'email_subject': 'Reset your primary email'}
             try:
-                send_email(data)
+                kwargs = {'data': data}
+                send_email.delay(**kwargs)
                 return Response({'message': 'We have sent you a link to reset your primary email', 'data': []}, status=status.HTTP_200_OK)
             except:
                 return Response({"message": 'Network Error', 'errors': ['Can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
