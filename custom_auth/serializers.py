@@ -5,7 +5,9 @@ from pyexpat import model
 from signal import raise_signal
 from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
-from .models import CustomUser, CustomerProfile, AdminProfile, AdminRole, PhoneOtp
+from .models import (CustomUser, CustomerProfile, 
+                    AdminProfile, AdminRole, PhoneOtp,
+                    Permission,Module,ModulePermission)
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -18,8 +20,35 @@ import os
 from django.core.validators import validate_email
 # from drf_extra_fields.fields import Base64ImageField
 
+class PermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = '__all__'
+
+class ModuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Module
+        fields = '__all__'
+
+class ModulePermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModulePermission
+        fields = '__all__'
+
+    def create(self, validated_data):
+        module_id = validated_data.pop('module')
+        permission_ids = validated_data.pop('permissions')
+        module_permission = ModulePermission.objects.create(
+            module=module_id,
+            **validated_data
+        )
+        for permission in permission_ids:
+            module_permission.permissions.add(permission)
+        return module_permission
+
 
 class AdminRoleSerializers(serializers.ModelSerializer):
+    module_permissions = ModulePermissionSerializer(many=True, read_only=True)
     class Meta:
         model = AdminRole
         fields = '__all__'

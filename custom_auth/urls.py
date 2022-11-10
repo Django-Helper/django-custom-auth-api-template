@@ -9,7 +9,9 @@ from .views import (Register, VerifyRegisterEmail,
                     CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
                     PrimaryEmailUpdateTokenCheckAPIForEmail,
                     RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
-                    LoginOTPRequest, LoginWithOTP, SendEmailView)
+                    LoginOTPRequest, LoginWithOTP, SendEmailView, AdminRoleListView,
+                    AdminRoleDetailView, ModuleListView, ModuleDetailView, PermissionListView,
+                    PermissionDetailView, ModulePermissionListView, ModulePermissionDetailView)
 from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
@@ -42,6 +44,14 @@ urlpatterns = [
     path('primary_email_update/<uidb64>/<emailb64>/<token>/', PrimaryEmailUpdateTokenCheckAPIForEmail.as_view(), name='primary_email_update_confirm_email'),
     path('request_primary_phone_update_otp/', RequestPrimaryPhoneUpdateOtp.as_view(), name='request_primary_phone_update_otp'),
     path('verify_primary_phone_update_otp/', VerifyPrimaryPhoneUpdateOtp.as_view(), name='verify_primary_phone_update_otp'),
-    path('send_email_template/', SendEmailView.as_view(), name='send_email_template')
+    path('send_email_template/', SendEmailView.as_view(), name='send_email_template'),
+    path('admin_roles/', AdminRoleListView.as_view(), name='admin_roles'),
+    path('admin_roles/<uuid:pk>/', AdminRoleDetailView.as_view(), name='admin_roles_detail'),
+    path('modules/', ModuleListView.as_view(), name='module_list'),
+    path('modules/<uuid:pk>/', ModuleDetailView.as_view(), name='module_detail'),
+    path('permissions/', PermissionListView.as_view(), name='permission_list'),
+    path('permissions/<uuid:pk>/', PermissionDetailView.as_view(), name='permission_detail'),
+    path('module_permission/', ModulePermissionListView.as_view(), name='module_permission_list'),
+    path('module_permission/<uuid:pk>/', ModulePermissionDetailView.as_view(), name='module_permission_detail'),
 
 ]

@@ -1,5 +1,6 @@
 from re import T
-from .models import CustomUser, CustomerProfile
+from .models import (CustomUser, CustomerProfile,
+                        AdminRole, AdminProfile, Permission, Module, ModulePermission)
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
                             LogoutSerializer, ResetPasswordEmailRequestSerializer,
@@ -7,9 +8,11 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             ChangePasswordSerializer, CustomerProfilePictureSerializer, 
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
                             RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
-                            LoginOTPVerifySerializer)
+                            LoginOTPVerifySerializer, PermissionSerializer, ModuleSerializer,
+                            ModulePermissionSerializer, AdminRoleSerializers, AdminProfileSerializers)
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, ListAPIView
+from rest_framework.generics import (GenericAPIView, RetrieveUpdateAPIView, 
+                                        ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView)
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from utils.send_email import Util
@@ -534,5 +537,57 @@ class SendEmailView(GenericAPIView):
         Util.send_email_with_template(html_content, data)
         
         return Response("ding dong", status=status.HTTP_200_OK)
+
+
+
+class AdminRoleListView(ListCreateAPIView):
+    queryset = AdminRole.objects.all()
+    serializer_class = AdminRoleSerializers
+
+
+class AdminRoleDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = AdminRole.objects.all()
+    serializer_class = AdminRoleSerializers
+
+
+class ModuleListView(ListCreateAPIView):
+    queryset = Module.objects.all()
+    serializer_class = ModuleSerializer
+
+
+class ModuleDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Module.objects.all()
+    serializer_class = ModuleSerializer
+
+
+class PermissionListView(ListCreateAPIView):
+    queryset = Permission.objects.all()
+    serializer_class = PermissionSerializer
+
+
+class PermissionDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Permission.objects.all()
+    serializer_class = PermissionSerializer
+
+
+class ModulePermissionListView(ListCreateAPIView):
+    queryset = ModulePermission.objects.all()
+    serializer_class = ModulePermissionSerializer
+
+
+class ModulePermissionDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = ModulePermission.objects.all()
+    serializer_class = ModulePermissionSerializer
+
+    def put(self, request, *args, **kwargs):
+        module_permission = self.get_object()
+        module_permission.permissions.clear()
+        for permission in request.data['permissions']:
+            module_permission.permissions.add(permission)
+        serializer = self.serializer_class(
+            instance=module_permission, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status.HTTP_200_OK)
 
 
