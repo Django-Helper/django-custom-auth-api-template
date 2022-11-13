@@ -11,6 +11,9 @@ from .serializers import (
 
 from custom_auth.models import CustomUser
 from django.http import Http404
+
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import Permission, Group
 # from auth_user_app.utils import Util
 
 

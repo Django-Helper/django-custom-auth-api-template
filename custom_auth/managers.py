@@ -16,6 +16,16 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)
         user.save()
         return user
+
+    def create_staffuser(self, email, password, username, user_type=2, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', False)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError(_('Staff user must have is_staff=True'))
+
+        return self.create_user(email, password, username, user_type, **extra_fields)
     
     def create_superuser(self, email, password, username, user_type=3, **extra_fields):
         extra_fields.setdefault('is_staff', True)

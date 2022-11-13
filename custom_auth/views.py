@@ -1,6 +1,8 @@
 from re import T
 from .models import (CustomUser, CustomerProfile,
-                        AdminRole, AdminProfile, Permission, Module, ModulePermission)
+                        AdminProfile, 
+                        # AdminRole, Permission, Module, ModulePermission
+                        )
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
                             LogoutSerializer, ResetPasswordEmailRequestSerializer,
@@ -8,8 +10,10 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             ChangePasswordSerializer, CustomerProfilePictureSerializer, 
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
                             RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
-                            LoginOTPVerifySerializer, PermissionSerializer, ModuleSerializer,
-                            ModulePermissionSerializer, AdminRoleSerializers, AdminProfileSerializers)
+                            LoginOTPVerifySerializer, AdminProfileSerializers,
+                            # PermissionSerializer, ModuleSerializer,
+                            # ModulePermissionSerializer, AdminRoleSerializers, 
+                            )
 from rest_framework.views import APIView
 from rest_framework.generics import (GenericAPIView, RetrieveUpdateAPIView, 
                                         ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView)
@@ -53,12 +57,12 @@ class Register(GenericAPIView):
             user_type = request.data['user_type']
             if user_type == 'customer':
                 user_type = 1
-            elif user_type == 'admin':
+            elif user_type == 'staff':
                 user_type = 2
             elif user_type == 'super admin':
                 user_type = 3
             else:
-                raise ValidationError('User type must be customer,admin or super admin.')
+                raise ValidationError('User type must be customer,staff or super admin.')
             request.data['user_type'] = user_type
 
         serializer = self.serializer_class(data=request.data)
@@ -540,54 +544,54 @@ class SendEmailView(GenericAPIView):
 
 
 
-class AdminRoleListView(ListCreateAPIView):
-    queryset = AdminRole.objects.all()
-    serializer_class = AdminRoleSerializers
+# class AdminRoleListView(ListCreateAPIView):
+#     queryset = AdminRole.objects.all()
+#     serializer_class = AdminRoleSerializers
 
 
-class AdminRoleDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = AdminRole.objects.all()
-    serializer_class = AdminRoleSerializers
+# class AdminRoleDetailView(RetrieveUpdateDestroyAPIView):
+#     queryset = AdminRole.objects.all()
+#     serializer_class = AdminRoleSerializers
 
 
-class ModuleListView(ListCreateAPIView):
-    queryset = Module.objects.all()
-    serializer_class = ModuleSerializer
+# class ModuleListView(ListCreateAPIView):
+#     queryset = Module.objects.all()
+#     serializer_class = ModuleSerializer
 
 
-class ModuleDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Module.objects.all()
-    serializer_class = ModuleSerializer
+# class ModuleDetailView(RetrieveUpdateDestroyAPIView):
+#     queryset = Module.objects.all()
+#     serializer_class = ModuleSerializer
 
 
-class PermissionListView(ListCreateAPIView):
-    queryset = Permission.objects.all()
-    serializer_class = PermissionSerializer
+# class PermissionListView(ListCreateAPIView):
+#     queryset = Permission.objects.all()
+#     serializer_class = PermissionSerializer
 
 
-class PermissionDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Permission.objects.all()
-    serializer_class = PermissionSerializer
+# class PermissionDetailView(RetrieveUpdateDestroyAPIView):
+#     queryset = Permission.objects.all()
+#     serializer_class = PermissionSerializer
 
 
-class ModulePermissionListView(ListCreateAPIView):
-    queryset = ModulePermission.objects.all()
-    serializer_class = ModulePermissionSerializer
+# class ModulePermissionListView(ListCreateAPIView):
+#     queryset = ModulePermission.objects.all()
+#     serializer_class = ModulePermissionSerializer
 
 
-class ModulePermissionDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = ModulePermission.objects.all()
-    serializer_class = ModulePermissionSerializer
+# class ModulePermissionDetailView(RetrieveUpdateDestroyAPIView):
+#     queryset = ModulePermission.objects.all()
+#     serializer_class = ModulePermissionSerializer
 
-    def put(self, request, *args, **kwargs):
-        module_permission = self.get_object()
-        module_permission.permissions.clear()
-        for permission in request.data['permissions']:
-            module_permission.permissions.add(permission)
-        serializer = self.serializer_class(
-            instance=module_permission, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status.HTTP_200_OK)
+#     def put(self, request, *args, **kwargs):
+#         module_permission = self.get_object()
+#         module_permission.permissions.clear()
+#         for permission in request.data['permissions']:
+#             module_permission.permissions.add(permission)
+#         serializer = self.serializer_class(
+#             instance=module_permission, data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response(serializer.data, status.HTTP_200_OK)
 
 
