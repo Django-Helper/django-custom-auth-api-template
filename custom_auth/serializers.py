@@ -47,6 +47,22 @@ class CustomerProfilePictureSerializer(serializers.ModelSerializer):
         instance.profile_picture.delete(save=True) # delete old profile picture
         return super().update(instance, validated_data)
 
+class StaffProfilePictureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminProfile
+        fields = ['profile_picture']
+
+    def validate(self, attrs):
+        if 'profile_picture' not in attrs:
+            raise ValidationError('Profile picture can not be blank')
+        if attrs['profile_picture'] is None:
+            raise ValidationError('Profile picture can not be blank')
+        return attrs
+
+    def update(self, instance, validated_data):
+        instance.profile_picture.delete(save=True) # delete old profile picture
+        return super().update(instance, validated_data)
+
 class CustomUserDetailsSerializer(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
     email = serializers.EmailField(read_only=True)
@@ -61,6 +77,22 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
         customer_profile = instance.customer_profile
         customer_profile_data = validated_data.pop('customer_profile')
         customer_profile_serializer.update(customer_profile, customer_profile_data)
+        return super().update(instance, validated_data)
+
+class StaffUserDetailsSerializer(serializers.ModelSerializer):
+    admin_profile = AdminProfileSerializers(required = False)
+    email = serializers.EmailField(read_only=True)
+    phone_number = serializers.CharField(read_only=True)
+    is_verified = serializers.BooleanField(read_only=True)
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'phone_number', 'username', 'is_verified', 'admin_profile']
+    
+    def update(self, instance, validated_data):
+        admin_profile_serializer = self.fields['admin_profile']
+        admin_profile = instance.admin_profile
+        admin_profile_data = validated_data.pop('admin_profile')
+        admin_profile_serializer.update(admin_profile, admin_profile_data)
         return super().update(instance, validated_data)
 
 class CustomUserSerializers(serializers.ModelSerializer):

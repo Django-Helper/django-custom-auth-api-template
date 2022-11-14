@@ -11,7 +11,7 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
                             RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
                             LoginOTPVerifySerializer, AdminProfileSerializers, PermissionSerializer,
-                            StaffUserSerializer
+                            StaffUserSerializer, StaffProfilePictureSerializer, StaffUserDetailsSerializer
                             )
 from rest_framework.views import APIView
 from rest_framework.generics import (GenericAPIView, RetrieveUpdateAPIView, 
@@ -481,6 +481,27 @@ class CustomerProfilePictureView(RetrieveUpdateAPIView):
 
     def get_object(self):
         return get_object_or_404(CustomerProfile, user=self.request.user)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class StaffProfileView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffUserDetailsSerializer
+
+    def get_object(self):
+        return get_object_or_404(CustomUser, id=self.request.user.id)
+    
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+class StaffProfilePictureView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffProfilePictureSerializer
+
+    def get_object(self):
+        return get_object_or_404(AdminProfile, user=self.request.user)
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
