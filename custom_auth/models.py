@@ -1,12 +1,15 @@
 import uuid
 from django.db import models
-from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin)
+from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin, Permission)
 from django.utils.translation import gettext_lazy as _
 from custom_auth.managers import CustomUserManager
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # Create your models here.
 
+
+class CustomPermission(Permission):
+    attribute_name = models.CharField(max_length=100, blank=True)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     USER_TYPE_CHOICES = (
@@ -48,51 +51,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             'refresh': str(refresh),
             'access': str(refresh.access_token)
         }
-
-
-# class Permission(models.Model):
-#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-#     name = models.CharField('permission_name',max_length=255)
-#     code = models.CharField(max_length=255, blank=True)
-#     is_default = models.BooleanField(default=False)
-
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return self.name
-
-
-# class Module(models.Model):
-#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-#     name = models.CharField('module_name',max_length=255)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return self.name
-
-
-
-# class AdminRole(models.Model):
-#     id = models.UUIDField(
-#         primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-#     name = models.CharField('admin_role',max_length=255)
-#     description = models.CharField(max_length=255, blank=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self) -> str:
-#         return self.name
-
-# class ModulePermission(models.Model):
-#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-#     module = models.ForeignKey(Module, related_name='module_permission', on_delete=models.CASCADE)
-#     permissions = models.ManyToManyField(Permission, related_name='module_permissions', blank=True)
-#     role = models.ForeignKey(AdminRole, related_name='module_permissions', on_delete=models.CASCADE, blank=True, null=True)
-
-#     def __str__(self):
-#         return "%s %s" % (self.module.name, self.role.name)
 
 
 

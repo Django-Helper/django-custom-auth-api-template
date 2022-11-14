@@ -1,6 +1,6 @@
 from re import T
 from .models import (CustomUser, CustomerProfile,
-                        AdminProfile, 
+                        AdminProfile, CustomPermission
                         # AdminRole, Permission, Module, ModulePermission
                         )
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
@@ -10,9 +10,8 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             ChangePasswordSerializer, CustomerProfilePictureSerializer, 
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
                             RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
-                            LoginOTPVerifySerializer, AdminProfileSerializers,
-                            # PermissionSerializer, ModuleSerializer,
-                            # ModulePermissionSerializer, AdminRoleSerializers, 
+                            LoginOTPVerifySerializer, AdminProfileSerializers, PermissionSerializer,
+                            StaffUserSerializer
                             )
 from rest_framework.views import APIView
 from rest_framework.generics import (GenericAPIView, RetrieveUpdateAPIView, 
@@ -35,7 +34,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.shortcuts import redirect
 from django.http import HttpResponsePermanentRedirect
 import os
-from .utils import get_registration_verify_email_data
+from .utils import get_registration_verify_email_data, get_staff_registration_verify_email_data
 import random
 from django.utils import timezone
 from .tokens import PrimaryEmailUpdateTokenGenerator, PrimaryPhoneUpdateTokenGenerator
@@ -43,6 +42,11 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
 from .tasks import send_email
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import Permission, Group
+from django.core import serializers
+import string
+from random import *
 
 
 class CustomRedirect(HttpResponsePermanentRedirect):
@@ -75,6 +79,30 @@ class Register(GenericAPIView):
                 kwargs = {'data': data}
                 send_email.delay(**kwargs)
                 context = {'message': 'registration successfull. For verfiy check email and verfiy. Verify email expired within 30 minutes'}
+                return Response(context, status=status.HTTP_201_CREATED)
+            except:
+                return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+class CreateStaffUser(GenericAPIView):
+    serializer_class = StaffUserSerializer
+    
+    def post(self, request):
+        characters = string.ascii_letters + string.punctuation  + string.digits
+        password =  "".join(choice(characters) for x in range(randint(8, 16)))
+        request.data['password'] = password
+        print('create staff data:', request.data)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            user_data = serializer.data
+            user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
+
+            data = get_staff_registration_verify_email_data(user, password, request)
+            try:
+                kwargs = {'data': data}
+                send_email.delay(**kwargs)
+                context = {'message': 'registration successfull. Check verify email and verfiy. Verify email expired within 30 minutes'}
                 return Response(context, status=status.HTTP_201_CREATED)
             except:
                 return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -594,4 +622,190 @@ class SendEmailView(GenericAPIView):
 #         serializer.save()
 #         return Response(serializer.data, status.HTTP_200_OK)
 
+
+class CustomContentListViews(GenericAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PermissionSerializer
+    def get(self, request):
+
+        permissions = Permission.objects.filter(content_type__app_label='custom_content')
+        result = []
+        # for p in permissions:
+        #     c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
+        #     find_module = next((item for item in result if item['name'] == p.content_type.model), None)
+        #     if find_module:
+        #         if c_p.attribute_name:
+        #             find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
+        #             if find_attr:
+        #                 find_attr['permissions'].append(p.codename)
+        #             else:
+        #                 a = {
+        #                 'name': '',
+        #                 'permissions': []
+        #                 }
+        #                 a['name'] = c_p.attribute_name
+        #                 a['permissions'].append(p.codename)
+        #                 find_module['attributes'].append(a)
+        #         else:
+        #             find_module['permissions'].append(p.codename)
+        #     else:
+        #         module = {
+        #             'name': '',
+        #             'permissions': [],
+        #             'attributes': []
+        #         }
+        #         module['name'] = p.content_type.model
+        #         if c_p.attribute_name:
+        #             a = {
+        #                 'name': '',
+        #                 'permissions': []
+        #             }
+        #             a['name'] = c_p.attribute_name
+        #             a['permissions'].append(p.codename)
+        #             module['attributes'].append(a)
+        #         else:
+        #             module['permissions'].append(p.codename)
+        #         result.append(module)
+
+        for p in permissions:
+            c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
+            find_module = next((item for item in result if item['name'] == p.content_type.model), None)
+            if find_module:
+                if c_p.attribute_name:
+                    find_attr = next((item for item in find_module['attributes'] if item == c_p.attribute_name), None)
+                    if not find_attr:
+                        find_module['attributes'].append(c_p.attribute_name)
+            else:
+                module = {
+                    'name': '',
+                    'attributes': []
+                }
+                module['name'] = p.content_type.model
+                if c_p.attribute_name:
+                    module['attributes'].append(c_p.attribute_name)
+                result.append(module)
+        return Response({'result': result}, status=status.HTTP_200_OK)
+
+class StaffRoleCreate(GenericAPIView):
+
+    def post(self, request):
+        data = request.data
+        new_group, created = Group.objects.get_or_create(name=data['name'].lower())
+        for module in data['modules']:
+            for permission in module['permissions']:
+                concat_p = permission+'_'+module['name']
+                p = Permission.objects.filter(codename=concat_p)[0]
+                new_group.permissions.add(p)
+            
+
+            if 'attributes' in module:
+                for attribute in module['attributes']:
+                    for permission in attribute['permissions']:
+                        concat_p = permission+'_'+'product'+'_'+attribute['name']
+                        print('concat_p:', concat_p)
+                        p = Permission.objects.filter(codename=concat_p)[0]
+                        print('p:', p)
+                        new_group.permissions.add(p)
+                    
+        new_group.save()
+        result = {}
+        result['id'] = new_group.id
+        result['name'] = new_group.name
+        result['modules'] = structure_role_list(new_group.permissions.all())
+        return Response(result, status=status.HTTP_200_OK)
+    
+    def put(self, request):
+        data = request.data
+        new_group = Group.objects.get(id=data['id'])
+        new_group.name = data['name'].lower()
+        for module in data['modules']:
+            for permission in module['permissions']:
+                concat_p = permission+'_'+module['name']
+                p = Permission.objects.filter(codename=concat_p)[0]
+                new_group.permissions.add(p)
+
+            if 'remove_permissions' in module:
+                for r_p in module['remove_permissions']:
+                    concat_p = r_p+'_'+module['name']
+                    p = Permission.objects.filter(codename=concat_p)[0]
+                    new_group.permissions.remove(p)
+
+            if 'attributes' in module:
+                for attribute in module['attributes']:
+                    for permission in attribute['permissions']:
+                        concat_p = permission+'_'+'product'+'_'+attribute['name']
+                        print('concat_p:', concat_p)
+                        p = Permission.objects.filter(codename=concat_p)[0]
+                        print('p:', p)
+                        new_group.permissions.add(p)
+                    
+                    if 'remove_permissions' in attribute:
+                        for r_p in attribute['remove_permissions']:
+                            concat_p = r_p+'_'+'product'+'_'+attribute['name']
+                            p = Permission.objects.filter(codename=concat_p)[0]
+                            new_group.permissions.remove(p)
+        new_group.save()
+        result = {}
+        result['name'] = new_group.name
+        result['modules'] = structure_role_list(new_group.permissions.all())
+        return Response(result, status=status.HTTP_200_OK)
+
+def structure_role_list(permissions):
+    result = []
+    for p in permissions:
+        c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
+        find_module = next((item for item in result if item['name'] == p.content_type.model), None)
+        if find_module:
+            if c_p.attribute_name:
+                find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
+                if find_attr:
+                    find_attr['permissions'].append(p.codename)
+                else:
+                    a = {
+                        'name': '',
+                        'permissions': []
+                        }
+                    a['name'] = c_p.attribute_name
+                    a['permissions'].append(p.codename)
+                    find_module['attributes'].append(a)
+            else:
+                find_module['permissions'].append(p.codename)
+        else:
+            module = {
+                    'name': '',
+                    'permissions': [],
+                    'attributes': []
+                }
+            module['name'] = p.content_type.model
+            if c_p.attribute_name:
+                a = {
+                        'name': '',
+                        'permissions': []
+                    }
+                a['name'] = c_p.attribute_name
+                a['permissions'].append(p.codename)
+                module['attributes'].append(a)
+            else:
+                module['permissions'].append(p.codename)
+            result.append(module)
+    return result
+
+class StaffRoleListView(GenericAPIView):
+    def get(self, request):
+        roles = Group.objects.all()
+        results = []
+        for role in roles:
+            d = {
+                'name': '',
+                'modules': []
+            }
+            d['id'] = role.id
+            d['name'] = role.name
+            d['modules'] = structure_role_list(role.permissions.all())
+            results.append(d)
+        return Response(results, status=status.HTTP_200_OK)
+
+
+
+    
 

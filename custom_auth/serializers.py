@@ -17,43 +17,11 @@ from django.db.models import Q
 from django.utils import timezone
 import os
 from django.core.validators import validate_email
-# from drf_extra_fields.fields import Base64ImageField
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import Permission, Group
 
-# class PermissionSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Permission
-#         fields = '__all__'
-
-# class ModuleSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Module
-#         fields = '__all__'
-
-# class ModulePermissionSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = ModulePermission
-#         fields = '__all__'
-
-#     def create(self, validated_data):
-#         module_id = validated_data.pop('module')
-#         permission_ids = validated_data.pop('permissions')
-#         module_permission = ModulePermission.objects.create(
-#             module=module_id,
-#             **validated_data
-#         )
-#         for permission in permission_ids:
-#             module_permission.permissions.add(permission)
-#         return module_permission
-
-
-# class AdminRoleSerializers(serializers.ModelSerializer):
-#     module_permissions = ModulePermissionSerializer(many=True, read_only=True)
-#     class Meta:
-#         model = AdminRole
-#         fields = '__all__'
 
 class AdminProfileSerializers(serializers.ModelSerializer):
-    # roles = AdminRoleSerializers(required = False, many = True)
     class Meta:
         model = AdminProfile
         fields = '__all__'
@@ -439,3 +407,57 @@ class LoginOTPVerifySerializer(serializers.ModelSerializer):
             raise ValidationError('Invalid Otp')
         except IndexError:
             raise ValidationError('Invalid Otp')
+
+
+class ContentTypeSerializer(serializers.Serializer):
+    class Meta:
+        model = ContentType
+        fields = '__all__'
+
+class PermissionSerializer(serializers.Serializer):
+    content_type = ContentTypeSerializer()
+    class Meta:
+        model = Permission
+        fields = '__all__'
+
+class StaffUserSerializer(serializers.ModelSerializer):
+    admin_profile = AdminProfileSerializers(required = False)
+    password = serializers.CharField(
+        max_length=68, min_length=8, write_only=True)
+    
+    groups = serializers.ListField(required = True, write_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'phone_number', 'username', 'password', 'groups', 'auth_providers', 'admin_profile']
+
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError('Password length must be 8 or more.')
+        return value
+
+    def validate_groups(self, value):
+        if len(value) <= 0:
+            raise serializers.ValidationError('Roles Can not be blank.')
+        for role in value:
+            try:
+                Group.objects.get(name=role)
+            except:
+                raise serializers.ValidationError(f'Role {role} does not exit.') 
+        return value
+    
+    def create(self, validated_data):
+        print('create staff serializer:', validated_data)
+        roles = validated_data.pop('groups')
+        admin_profile_data = validated_data.pop('admin_profile') if 'admin_profile' in validated_data else None
+        user = CustomUser.objects.create_staffuser(validated_data.pop('email'), validated_data.pop('password'), 
+        validated_data.pop('username'), **validated_data)
+        user.auth_providers.append('email')
+        user.save()
+        for role in roles:
+            group = Group.objects.get(name=role)
+            group.user_set.add(user)
+            group.save()
+        print('user groups:', user.groups.all())
+        AdminProfile.objects.create(user=user, **admin_profile_data)
+        return user
