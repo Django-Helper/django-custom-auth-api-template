@@ -54,17 +54,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 
-class AdminProfile(models.Model):
+class StaffProfile(models.Model):
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True)
 
-    user = models.OneToOneField(CustomUser, related_name = 'admin_profile',
+    user = models.OneToOneField(CustomUser, related_name = 'staff_profile',
         on_delete=models.CASCADE, blank=True)
     name = models.CharField(max_length=255, blank=False, null=False, db_index=True)
     address = models.CharField(max_length=255, blank=True)
     postal_code = models.CharField(max_length=255, blank=True)
     country = models.CharField(max_length=255, blank=True)
-    profile_picture = models.ImageField(upload_to='upload/admin_profile_picture/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='upload/staff_profile_picture/', blank=True, null=True)
     # roles = models.ManyToManyField(AdminRole, related_name='admins', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

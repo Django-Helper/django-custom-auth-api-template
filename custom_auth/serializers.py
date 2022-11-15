@@ -6,7 +6,7 @@ from signal import raise_signal
 from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
 from .models import (CustomUser, CustomerProfile, 
-                    AdminProfile, PhoneOtp)
+                    StaffProfile, PhoneOtp)
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -21,9 +21,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
 
 
-class AdminProfileSerializers(serializers.ModelSerializer):
+class StaffProfileSerializers(serializers.ModelSerializer):
     class Meta:
-        model = AdminProfile
+        model = StaffProfile
         fields = '__all__'
 
 class CustomerProfileSerializers(serializers.ModelSerializer):
@@ -49,7 +49,7 @@ class CustomerProfilePictureSerializer(serializers.ModelSerializer):
 
 class StaffProfilePictureSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AdminProfile
+        model = StaffProfile
         fields = ['profile_picture']
 
     def validate(self, attrs):
@@ -80,31 +80,31 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 class StaffUserDetailsSerializer(serializers.ModelSerializer):
-    admin_profile = AdminProfileSerializers(required = False)
+    staff_profile = StaffProfileSerializers(required = False)
     email = serializers.EmailField(read_only=True)
     phone_number = serializers.CharField(read_only=True)
     is_verified = serializers.BooleanField(read_only=True)
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'is_verified', 'admin_profile']
+        fields = ['email', 'phone_number', 'username', 'is_verified', 'staff_profile']
     
     def update(self, instance, validated_data):
-        admin_profile_serializer = self.fields['admin_profile']
-        admin_profile = instance.admin_profile
-        admin_profile_data = validated_data.pop('admin_profile')
-        admin_profile_serializer.update(admin_profile, admin_profile_data)
+        staff_profile_serializer = self.fields['staff_profile']
+        staff_profile = instance.staff_profile
+        staff_profile_data = validated_data.pop('staff_profile')
+        staff_profile_serializer.update(staff_profile, staff_profile_data)
         return super().update(instance, validated_data)
 
 class CustomUserSerializers(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
-    admin_profile = AdminProfileSerializers(required = False)
+    staff_profile = StaffProfileSerializers(required = False)
     password = serializers.CharField(
         max_length=68, min_length=8, write_only=True)
 
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'auth_providers', 'customer_profile', 'admin_profile']
+        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'auth_providers', 'customer_profile', 'staff_profile']
 
     def validate_password(self, value):
         if len(value) < 8:
@@ -113,7 +113,7 @@ class CustomUserSerializers(serializers.ModelSerializer):
     
     def create(self, validated_data):
         customer_profile_data = validated_data.pop('customer_profile') if 'customer_profile' in validated_data else None
-        admin_profile_data = validated_data.pop('admin_profile') if 'admin_profile' in validated_data else None
+        staff_profile_data = validated_data.pop('staff_profile') if 'staff_profile' in validated_data else None
         user_type = validated_data.pop('user_type')
         if user_type == 3:
             user = CustomUser.objects.create_superuser(validated_data.pop('email'), validated_data.pop('password'), 
@@ -129,7 +129,7 @@ class CustomUserSerializers(serializers.ModelSerializer):
         if user_type == 1:
             CustomerProfile.objects.create(user=user, **customer_profile_data)
         else:
-            AdminProfile.objects.create(user=user, **admin_profile_data)
+            StaffProfile.objects.create(user=user, **staff_profile_data)
         return user
 
 
@@ -453,7 +453,7 @@ class PermissionSerializer(serializers.Serializer):
         fields = '__all__'
 
 class StaffUserSerializer(serializers.ModelSerializer):
-    admin_profile = AdminProfileSerializers(required = False)
+    staff_profile = StaffProfileSerializers(required = False)
     password = serializers.CharField(
         max_length=68, min_length=8, write_only=True)
     
@@ -461,7 +461,7 @@ class StaffUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'password', 'groups', 'auth_providers', 'admin_profile']
+        fields = ['email', 'phone_number', 'username', 'password', 'groups', 'auth_providers', 'staff_profile']
 
     def validate_password(self, value):
         if len(value) < 8:
@@ -481,7 +481,7 @@ class StaffUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         print('create staff serializer:', validated_data)
         roles = validated_data.pop('groups')
-        admin_profile_data = validated_data.pop('admin_profile') if 'admin_profile' in validated_data else None
+        staff_profile_data = validated_data.pop('staff_profile') if 'staff_profile' in validated_data else None
         user = CustomUser.objects.create_staffuser(validated_data.pop('email'), validated_data.pop('password'), 
         validated_data.pop('username'), **validated_data)
         user.auth_providers.append('email')
@@ -491,5 +491,5 @@ class StaffUserSerializer(serializers.ModelSerializer):
             group.user_set.add(user)
             group.save()
         print('user groups:', user.groups.all())
-        AdminProfile.objects.create(user=user, **admin_profile_data)
+        StaffProfile.objects.create(user=user, **staff_profile_data)
         return user

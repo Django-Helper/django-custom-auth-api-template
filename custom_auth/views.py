@@ -1,7 +1,6 @@
 from re import T
 from .models import (CustomUser, CustomerProfile,
-                        AdminProfile, CustomPermission
-                        # AdminRole, Permission, Module, ModulePermission
+                        StaffProfile, CustomPermission
                         )
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
@@ -10,7 +9,7 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             ChangePasswordSerializer, CustomerProfilePictureSerializer, 
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
                             RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
-                            LoginOTPVerifySerializer, AdminProfileSerializers, PermissionSerializer,
+                            LoginOTPVerifySerializer, StaffProfileSerializers, PermissionSerializer,
                             StaffUserSerializer, StaffProfilePictureSerializer, StaffUserDetailsSerializer
                             )
 from rest_framework.views import APIView
@@ -44,7 +43,6 @@ from django.utils.html import strip_tags
 from .tasks import send_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
-from django.core import serializers
 import string
 from random import *
 
@@ -501,7 +499,7 @@ class StaffProfilePictureView(RetrieveUpdateAPIView):
     serializer_class = StaffProfilePictureSerializer
 
     def get_object(self):
-        return get_object_or_404(AdminProfile, user=self.request.user)
+        return get_object_or_404(StaffProfile, user=self.request.user)
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -592,56 +590,6 @@ class SendEmailView(GenericAPIView):
         return Response("ding dong", status=status.HTTP_200_OK)
 
 
-
-# class AdminRoleListView(ListCreateAPIView):
-#     queryset = AdminRole.objects.all()
-#     serializer_class = AdminRoleSerializers
-
-
-# class AdminRoleDetailView(RetrieveUpdateDestroyAPIView):
-#     queryset = AdminRole.objects.all()
-#     serializer_class = AdminRoleSerializers
-
-
-# class ModuleListView(ListCreateAPIView):
-#     queryset = Module.objects.all()
-#     serializer_class = ModuleSerializer
-
-
-# class ModuleDetailView(RetrieveUpdateDestroyAPIView):
-#     queryset = Module.objects.all()
-#     serializer_class = ModuleSerializer
-
-
-# class PermissionListView(ListCreateAPIView):
-#     queryset = Permission.objects.all()
-#     serializer_class = PermissionSerializer
-
-
-# class PermissionDetailView(RetrieveUpdateDestroyAPIView):
-#     queryset = Permission.objects.all()
-#     serializer_class = PermissionSerializer
-
-
-# class ModulePermissionListView(ListCreateAPIView):
-#     queryset = ModulePermission.objects.all()
-#     serializer_class = ModulePermissionSerializer
-
-
-# class ModulePermissionDetailView(RetrieveUpdateDestroyAPIView):
-#     queryset = ModulePermission.objects.all()
-#     serializer_class = ModulePermissionSerializer
-
-#     def put(self, request, *args, **kwargs):
-#         module_permission = self.get_object()
-#         module_permission.permissions.clear()
-#         for permission in request.data['permissions']:
-#             module_permission.permissions.add(permission)
-#         serializer = self.serializer_class(
-#             instance=module_permission, data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data, status.HTTP_200_OK)
 
 
 class CustomContentListViews(GenericAPIView):
