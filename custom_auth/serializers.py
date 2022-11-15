@@ -6,7 +6,7 @@ from signal import raise_signal
 from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
 from .models import (CustomUser, CustomerProfile, 
-                    StaffProfile, PhoneOtp)
+                    StaffProfile, PhoneOtp, CustomPermission)
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -47,21 +47,7 @@ class CustomerProfilePictureSerializer(serializers.ModelSerializer):
         instance.profile_picture.delete(save=True) # delete old profile picture
         return super().update(instance, validated_data)
 
-class StaffProfilePictureSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StaffProfile
-        fields = ['profile_picture']
 
-    def validate(self, attrs):
-        if 'profile_picture' not in attrs:
-            raise ValidationError('Profile picture can not be blank')
-        if attrs['profile_picture'] is None:
-            raise ValidationError('Profile picture can not be blank')
-        return attrs
-
-    def update(self, instance, validated_data):
-        instance.profile_picture.delete(save=True) # delete old profile picture
-        return super().update(instance, validated_data)
 
 class CustomUserDetailsSerializer(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
@@ -79,21 +65,7 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
         customer_profile_serializer.update(customer_profile, customer_profile_data)
         return super().update(instance, validated_data)
 
-class StaffUserDetailsSerializer(serializers.ModelSerializer):
-    staff_profile = StaffProfileSerializers(required = False)
-    email = serializers.EmailField(read_only=True)
-    phone_number = serializers.CharField(read_only=True)
-    is_verified = serializers.BooleanField(read_only=True)
-    class Meta:
-        model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'is_verified', 'staff_profile']
-    
-    def update(self, instance, validated_data):
-        staff_profile_serializer = self.fields['staff_profile']
-        staff_profile = instance.staff_profile
-        staff_profile_data = validated_data.pop('staff_profile')
-        staff_profile_serializer.update(staff_profile, staff_profile_data)
-        return super().update(instance, validated_data)
+
 
 class CustomUserSerializers(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
@@ -441,16 +413,128 @@ class LoginOTPVerifySerializer(serializers.ModelSerializer):
             raise ValidationError('Invalid Otp')
 
 
-class ContentTypeSerializer(serializers.Serializer):
+
+
+
+
+
+class ContentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContentType
         fields = '__all__'
 
-class PermissionSerializer(serializers.Serializer):
+class PermissionSerializer(serializers.ModelSerializer):
     content_type = ContentTypeSerializer()
     class Meta:
         model = Permission
         fields = '__all__'
+
+
+def structure_role_list(permissions):
+    result = []
+    for p in permissions:
+        c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
+        find_module = next((item for item in result if item['name'] == p.content_type.model), None)
+        if find_module:
+            if c_p.attribute_name:
+                find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
+                if find_attr:
+                    find_attr['permissions'].append(p.codename)
+                else:
+                    a = {
+                        'name': '',
+                        'permissions': []
+                        }
+                    a['name'] = c_p.attribute_name
+                    a['permissions'].append(p.codename)
+                    find_module['attributes'].append(a)
+            else:
+                find_module['permissions'].append(p.codename)
+        else:
+            module = {
+                    'name': '',
+                    'permissions': [],
+                    'attributes': []
+                }
+            module['name'] = p.content_type.model
+            if c_p.attribute_name:
+                a = {
+                        'name': '',
+                        'permissions': []
+                    }
+                a['name'] = c_p.attribute_name
+                a['permissions'].append(p.codename)
+                module['attributes'].append(a)
+            else:
+                module['permissions'].append(p.codename)
+            result.append(module)
+    return result
+
+class StaffRoleCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(required=True)
+    modules = serializers.JSONField(required=True)
+
+    class Meta:
+        fields = '__all__'
+    
+    def create(self, validated_data):
+        name = validated_data.pop('name')
+        modules = validated_data.pop('modules')
+        new_group, created = Group.objects.get_or_create(name=name.lower())
+        for module in modules:
+            for permission in module['permissions']:
+                concat_p = permission+'_'+module['name']
+                p = Permission.objects.filter(codename=concat_p)[0]
+                new_group.permissions.add(p)
+            
+
+            if 'attributes' in module:
+                for attribute in module['attributes']:
+                    for permission in attribute['permissions']:
+                        concat_p = permission+'_'+'product'+'_'+attribute['name']
+                        print('concat_p:', concat_p)
+                        p = Permission.objects.filter(codename=concat_p)[0]
+                        print('p:', p)
+                        new_group.permissions.add(p)
+                    
+        new_group.save()
+        result = {}
+        result['id'] = new_group.id
+        result['name'] = new_group.name
+        result['modules'] = structure_role_list(new_group.permissions.all())
+        return result
+
+class StaffUserDetailsSerializer(serializers.ModelSerializer):
+    staff_profile = StaffProfileSerializers(required = False)
+    email = serializers.EmailField(read_only=True)
+    phone_number = serializers.CharField(read_only=True)
+    is_verified = serializers.BooleanField(read_only=True)
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'phone_number', 'username', 'is_verified', 'groups', 'staff_profile']
+    
+    def update(self, instance, validated_data):
+        staff_profile_serializer = self.fields['staff_profile']
+        staff_profile = instance.staff_profile
+        staff_profile_data = validated_data.pop('staff_profile')
+        staff_profile_serializer.update(staff_profile, staff_profile_data)
+        return super().update(instance, validated_data)
+
+class StaffProfilePictureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffProfile
+        fields = ['profile_picture']
+
+    def validate(self, attrs):
+        if 'profile_picture' not in attrs:
+            raise ValidationError('Profile picture can not be blank')
+        if attrs['profile_picture'] is None:
+            raise ValidationError('Profile picture can not be blank')
+        return attrs
+
+    def update(self, instance, validated_data):
+        instance.profile_picture.delete(save=True) # delete old profile picture
+        return super().update(instance, validated_data)
 
 class StaffUserSerializer(serializers.ModelSerializer):
     staff_profile = StaffProfileSerializers(required = False)
@@ -479,7 +563,6 @@ class StaffUserSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        print('create staff serializer:', validated_data)
         roles = validated_data.pop('groups')
         staff_profile_data = validated_data.pop('staff_profile') if 'staff_profile' in validated_data else None
         user = CustomUser.objects.create_staffuser(validated_data.pop('email'), validated_data.pop('password'), 
@@ -490,6 +573,5 @@ class StaffUserSerializer(serializers.ModelSerializer):
             group = Group.objects.get(name=role)
             group.user_set.add(user)
             group.save()
-        print('user groups:', user.groups.all())
         StaffProfile.objects.create(user=user, **staff_profile_data)
         return user

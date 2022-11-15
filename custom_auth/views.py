@@ -10,7 +10,8 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             PhoneOtpSerializer, RequestPrimaryEmailUpdateEmailSerializer,
                             RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
                             LoginOTPVerifySerializer, StaffProfileSerializers, PermissionSerializer,
-                            StaffUserSerializer, StaffProfilePictureSerializer, StaffUserDetailsSerializer
+                            StaffUserSerializer, StaffProfilePictureSerializer, StaffUserDetailsSerializer,
+                            StaffRoleCreateSerializer
                             )
 from rest_framework.views import APIView
 from rest_framework.generics import (GenericAPIView, RetrieveUpdateAPIView, 
@@ -82,29 +83,7 @@ class Register(GenericAPIView):
                 return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-class CreateStaffUser(GenericAPIView):
-    serializer_class = StaffUserSerializer
-    
-    def post(self, request):
-        characters = string.ascii_letters + string.punctuation  + string.digits
-        password =  "".join(choice(characters) for x in range(randint(8, 16)))
-        request.data['password'] = password
-        print('create staff data:', request.data)
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            user_data = serializer.data
-            user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
 
-            data = get_staff_registration_verify_email_data(user, password, request)
-            try:
-                kwargs = {'data': data}
-                send_email.delay(**kwargs)
-                context = {'message': 'registration successfull. Check verify email and verfiy. Verify email expired within 30 minutes'}
-                return Response(context, status=status.HTTP_201_CREATED)
-            except:
-                return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class SendVerifyEmail(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -484,25 +463,7 @@ class CustomerProfilePictureView(RetrieveUpdateAPIView):
         return self.update(request, *args, **kwargs)
 
 
-class StaffProfileView(RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = StaffUserDetailsSerializer
 
-    def get_object(self):
-        return get_object_or_404(CustomUser, id=self.request.user.id)
-    
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-class StaffProfilePictureView(RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = StaffProfilePictureSerializer
-
-    def get_object(self):
-        return get_object_or_404(StaffProfile, user=self.request.user)
-
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
 
 
 class ListCustomerView(ListAPIView):
@@ -591,6 +552,8 @@ class SendEmailView(GenericAPIView):
 
 
 
+# Staff Admin API View
+
 
 class CustomContentListViews(GenericAPIView):
     # permission_classes = [permissions.IsAuthenticated]
@@ -656,32 +619,11 @@ class CustomContentListViews(GenericAPIView):
         return Response({'result': result}, status=status.HTTP_200_OK)
 
 class StaffRoleCreate(GenericAPIView):
-
+    serializer_class = StaffRoleCreateSerializer
     def post(self, request):
-        data = request.data
-        new_group, created = Group.objects.get_or_create(name=data['name'].lower())
-        for module in data['modules']:
-            for permission in module['permissions']:
-                concat_p = permission+'_'+module['name']
-                p = Permission.objects.filter(codename=concat_p)[0]
-                new_group.permissions.add(p)
-            
-
-            if 'attributes' in module:
-                for attribute in module['attributes']:
-                    for permission in attribute['permissions']:
-                        concat_p = permission+'_'+'product'+'_'+attribute['name']
-                        print('concat_p:', concat_p)
-                        p = Permission.objects.filter(codename=concat_p)[0]
-                        print('p:', p)
-                        new_group.permissions.add(p)
-                    
-        new_group.save()
-        result = {}
-        result['id'] = new_group.id
-        result['name'] = new_group.name
-        result['modules'] = structure_role_list(new_group.permissions.all())
-        return Response(result, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request):
         data = request.data
@@ -773,6 +715,52 @@ class StaffRoleListView(GenericAPIView):
             d['modules'] = structure_role_list(role.permissions.all())
             results.append(d)
         return Response(results, status=status.HTTP_200_OK)
+
+
+class CreateStaffUser(GenericAPIView):
+    serializer_class = StaffUserSerializer
+    
+    def post(self, request):
+        characters = string.ascii_letters + string.punctuation  + string.digits
+        password =  "".join(choice(characters) for x in range(randint(8, 16)))
+        request.data['password'] = password
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            user_data = serializer.data
+            user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
+
+            data = get_staff_registration_verify_email_data(user, password, request)
+            try:
+                kwargs = {'data': data}
+                send_email.delay(**kwargs)
+                context = {'message': 'registration successfull. Check verify email and verfiy. Verify email expired within 30 minutes'}
+                return Response(context, status=status.HTTP_201_CREATED)
+            except:
+                return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class StaffProfileView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffUserDetailsSerializer
+
+    def get_object(self):
+        return get_object_or_404(CustomUser, id=self.request.user.id)
+    
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+class StaffProfilePictureView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffProfilePictureSerializer
+
+    def get_object(self):
+        return get_object_or_404(StaffProfile, user=self.request.user)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 
