@@ -763,6 +763,16 @@ class StaffProfilePictureView(RetrieveUpdateAPIView):
         return self.update(request, *args, **kwargs)
 
 
+class StaffModulePermissionView(GenericAPIView):
+
+    def get(self, request):
+        pass
+
+class StaffModuleAttributePermissionView(GenericAPIView):
+
+    def get(self, request):
+        pass
+
 
     
 

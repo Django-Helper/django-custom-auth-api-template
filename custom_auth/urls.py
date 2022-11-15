@@ -11,7 +11,7 @@ from .views import (Register, VerifyRegisterEmail,
                     RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
                     LoginOTPRequest, LoginWithOTP, SendEmailView, CustomContentListViews,
                     StaffRoleCreate, StaffRoleListView, CreateStaffUser, StaffProfilePictureView,
-                    StaffProfileView,
+                    StaffProfileView, StaffModulePermissionView, StaffModuleAttributePermissionView,
                     # AdminRoleListView,
                     # AdminRoleDetailView, ModuleListView, ModuleDetailView, PermissionListView,
                     # PermissionDetailView, ModulePermissionListView, ModulePermissionDetailView
@@ -56,5 +56,7 @@ urlpatterns = [
     path('create_staff/', CreateStaffUser.as_view(), name='create_staff'),
     path('staff_profile/', StaffProfileView.as_view(), name='staff_profile'),
     path('staff_profile_picture/', StaffProfilePictureView.as_view(), name='staff_profile_picture'),
+    path('staff_module_permissions/', StaffModulePermissionView.as_view(), name='staff_module_permission'),
+    path('staff_module_attribute_permissions', StaffModuleAttributePermissionView.as_view(), name='staff_module_attribute_permissions')
 
 ]
