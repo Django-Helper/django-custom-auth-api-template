@@ -23,7 +23,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         max_length=16, unique=True, blank=True, null=True)
     username = models.CharField(max_length=255, unique=True, db_index=True)
 
-    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES)
+    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES, blank=True, null=True)
     auth_providers = models.JSONField(default=list)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -39,7 +39,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return self.email
+        return self.username
     
     def tokens(self):
         refresh = RefreshToken.for_user(self)
