@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser, CustomerProfile
+from .models import CustomUser, CustomerProfile, StaffProfile
 
 # Register your models here.
 
@@ -11,3 +11,4 @@ class CustomUserAdmin(admin.ModelAdmin):
     'is_superuser', 'last_login', 'created_at', 'updated_at']
 
 admin.site.register(CustomerProfile)
+admin.site.register(StaffProfile)

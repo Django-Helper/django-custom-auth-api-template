@@ -69,6 +69,12 @@ class StaffProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # class Meta:
+    #     permissions = (
+    #         ('can_view_StaffProfile_name', 'Can view StaffProfile name'),
+    #         ('can_view_StaffProfile_address', 'Can view StaffProfile address')
+    #     )
+
     def __str__(self) -> str:
         return self.name
 
