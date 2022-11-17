@@ -1,6 +1,6 @@
 from re import T
 from .models import (CustomUser, CustomerProfile,
-                        StaffProfile, CustomPermission
+                        StaffProfile
                         )
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
@@ -599,23 +599,23 @@ class CustomContentListViews(GenericAPIView):
         #             module['permissions'].append(p.codename)
         #         result.append(module)
 
-        for p in permissions:
-            c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
-            find_module = next((item for item in result if item['name'] == p.content_type.model), None)
-            if find_module:
-                if c_p.attribute_name:
-                    find_attr = next((item for item in find_module['attributes'] if item == c_p.attribute_name), None)
-                    if not find_attr:
-                        find_module['attributes'].append(c_p.attribute_name)
-            else:
-                module = {
-                    'name': '',
-                    'attributes': []
-                }
-                module['name'] = p.content_type.model
-                if c_p.attribute_name:
-                    module['attributes'].append(c_p.attribute_name)
-                result.append(module)
+        # for p in permissions:
+        #     c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
+        #     find_module = next((item for item in result if item['name'] == p.content_type.model), None)
+        #     if find_module:
+        #         if c_p.attribute_name:
+        #             find_attr = next((item for item in find_module['attributes'] if item == c_p.attribute_name), None)
+        #             if not find_attr:
+        #                 find_module['attributes'].append(c_p.attribute_name)
+        #     else:
+        #         module = {
+        #             'name': '',
+        #             'attributes': []
+        #         }
+        #         module['name'] = p.content_type.model
+        #         if c_p.attribute_name:
+        #             module['attributes'].append(c_p.attribute_name)
+        #         result.append(module)
         return Response({'result': result}, status=status.HTTP_200_OK)
 
 class StaffRoleCreate(GenericAPIView):
@@ -658,48 +658,48 @@ class StaffRoleCreate(GenericAPIView):
         new_group.save()
         result = {}
         result['name'] = new_group.name
-        result['modules'] = structure_role_list(new_group.permissions.all())
+        # result['modules'] = structure_role_list(new_group.permissions.all())
         return Response(result, status=status.HTTP_200_OK)
 
-def structure_role_list(permissions):
-    result = []
-    for p in permissions:
-        c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
-        find_module = next((item for item in result if item['name'] == p.content_type.model), None)
-        if find_module:
-            if c_p.attribute_name:
-                find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
-                if find_attr:
-                    find_attr['permissions'].append(p.codename)
-                else:
-                    a = {
-                        'name': '',
-                        'permissions': []
-                        }
-                    a['name'] = c_p.attribute_name
-                    a['permissions'].append(p.codename)
-                    find_module['attributes'].append(a)
-            else:
-                find_module['permissions'].append(p.codename)
-        else:
-            module = {
-                    'name': '',
-                    'permissions': [],
-                    'attributes': []
-                }
-            module['name'] = p.content_type.model
-            if c_p.attribute_name:
-                a = {
-                        'name': '',
-                        'permissions': []
-                    }
-                a['name'] = c_p.attribute_name
-                a['permissions'].append(p.codename)
-                module['attributes'].append(a)
-            else:
-                module['permissions'].append(p.codename)
-            result.append(module)
-    return result
+# def structure_role_list(permissions):
+#     result = []
+#     for p in permissions:
+#         c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
+#         find_module = next((item for item in result if item['name'] == p.content_type.model), None)
+#         if find_module:
+#             if c_p.attribute_name:
+#                 find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
+#                 if find_attr:
+#                     find_attr['permissions'].append(p.codename)
+#                 else:
+#                     a = {
+#                         'name': '',
+#                         'permissions': []
+#                         }
+#                     a['name'] = c_p.attribute_name
+#                     a['permissions'].append(p.codename)
+#                     find_module['attributes'].append(a)
+#             else:
+#                 find_module['permissions'].append(p.codename)
+#         else:
+#             module = {
+#                     'name': '',
+#                     'permissions': [],
+#                     'attributes': []
+#                 }
+#             module['name'] = p.content_type.model
+#             if c_p.attribute_name:
+#                 a = {
+#                         'name': '',
+#                         'permissions': []
+#                     }
+#                 a['name'] = c_p.attribute_name
+#                 a['permissions'].append(p.codename)
+#                 module['attributes'].append(a)
+#             else:
+#                 module['permissions'].append(p.codename)
+#             result.append(module)
+#     return result
 
 class StaffRoleListView(GenericAPIView):
     def get(self, request):
@@ -712,7 +712,7 @@ class StaffRoleListView(GenericAPIView):
             }
             d['id'] = role.id
             d['name'] = role.name
-            d['modules'] = structure_role_list(role.permissions.all())
+            # d['modules'] = structure_role_list(role.permissions.all())
             results.append(d)
         return Response(results, status=status.HTTP_200_OK)
 

@@ -7,10 +7,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 # Create your models here.
 
-
-class CustomPermission(Permission):
-    attribute_name = models.CharField(max_length=100, blank=True)
-
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     USER_TYPE_CHOICES = (
         (1, 'customer'),

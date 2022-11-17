@@ -6,7 +6,7 @@ from signal import raise_signal
 from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
 from .models import (CustomUser, CustomerProfile, 
-                    StaffProfile, PhoneOtp, CustomPermission)
+                    StaffProfile, PhoneOtp)
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -430,45 +430,45 @@ class PermissionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-def structure_role_list(permissions):
-    result = []
-    for p in permissions:
-        c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
-        find_module = next((item for item in result if item['name'] == p.content_type.model), None)
-        if find_module:
-            if c_p.attribute_name:
-                find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
-                if find_attr:
-                    find_attr['permissions'].append(p.codename)
-                else:
-                    a = {
-                        'name': '',
-                        'permissions': []
-                        }
-                    a['name'] = c_p.attribute_name
-                    a['permissions'].append(p.codename)
-                    find_module['attributes'].append(a)
-            else:
-                find_module['permissions'].append(p.codename)
-        else:
-            module = {
-                    'name': '',
-                    'permissions': [],
-                    'attributes': []
-                }
-            module['name'] = p.content_type.model
-            if c_p.attribute_name:
-                a = {
-                        'name': '',
-                        'permissions': []
-                    }
-                a['name'] = c_p.attribute_name
-                a['permissions'].append(p.codename)
-                module['attributes'].append(a)
-            else:
-                module['permissions'].append(p.codename)
-            result.append(module)
-    return result
+# def structure_role_list(permissions):
+#     result = []
+#     for p in permissions:
+#         c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
+#         find_module = next((item for item in result if item['name'] == p.content_type.model), None)
+#         if find_module:
+#             if c_p.attribute_name:
+#                 find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
+#                 if find_attr:
+#                     find_attr['permissions'].append(p.codename)
+#                 else:
+#                     a = {
+#                         'name': '',
+#                         'permissions': []
+#                         }
+#                     a['name'] = c_p.attribute_name
+#                     a['permissions'].append(p.codename)
+#                     find_module['attributes'].append(a)
+#             else:
+#                 find_module['permissions'].append(p.codename)
+#         else:
+#             module = {
+#                     'name': '',
+#                     'permissions': [],
+#                     'attributes': []
+#                 }
+#             module['name'] = p.content_type.model
+#             if c_p.attribute_name:
+#                 a = {
+#                         'name': '',
+#                         'permissions': []
+#                     }
+#                 a['name'] = c_p.attribute_name
+#                 a['permissions'].append(p.codename)
+#                 module['attributes'].append(a)
+#             else:
+#                 module['permissions'].append(p.codename)
+#             result.append(module)
+#     return result
 
 class StaffRoleCreateSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
@@ -501,7 +501,7 @@ class StaffRoleCreateSerializer(serializers.Serializer):
         result = {}
         result['id'] = new_group.id
         result['name'] = new_group.name
-        result['modules'] = structure_role_list(new_group.permissions.all())
+        # result['modules'] = structure_role_list(new_group.permissions.all())
         return result
 
 class StaffUserDetailsSerializer(serializers.ModelSerializer):
