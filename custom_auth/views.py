@@ -56,18 +56,6 @@ class Register(GenericAPIView):
     serializer_class = CustomUserSerializers
 
     def post(self, request):
-        if 'user_type' in request.data:
-            user_type = request.data['user_type']
-            if user_type == 'customer':
-                user_type = 1
-            elif user_type == 'staff':
-                user_type = 2
-            elif user_type == 'super admin':
-                user_type = 3
-            else:
-                raise ValidationError('User type must be customer,staff or super admin.')
-            request.data['user_type'] = user_type
-
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -559,9 +547,44 @@ class CustomContentListViews(GenericAPIView):
     # permission_classes = [permissions.IsAuthenticated]
     serializer_class = PermissionSerializer
     def get(self, request):
+        permissions = Permission.objects.filter(content_type__app_label__in=['custom_auth','social_auth','country_app']).values('content_type__app_label', 'content_type__model', 'codename')
+        results = []
+        for permission in permissions:
+            find_module = next((item for item in results if item['name'] == permission['content_type__app_label']), None)
+            if find_module:
+                find_model = next((item for item in find_module['models'] if item['name'] == permission['content_type__model']), None)
+                if find_model:
+                    split_codename = permission['codename'].split('__')
+                    if len(split_codename) > 1:
+                        find_attribute = next((item for item in find_model['attributes'] if item['name'] == split_codename[-1]), None)
+                        if find_attribute:
+                            find_attribute['permissions'].append(permission['codename'])
+                        else:
+                            find_model['attributes'].append({'name':split_codename[-1],'permissions':[permission['codename']]})
+                    else:
+                        find_model['permissions'].append(permission['codename'])
+                else:
+                    split_codename = permission['codename'].split('__')
+                    if len(split_codename) > 1:
+                        model = {'name': None, 'permissions': [], 'attributes': []}
+                        model['name'] = permission['content_type__model']
+                        model['attributes'].append({'name': split_codename[-1], 'permissions':[permission['codename']]})
+                        find_module['models'].append(model)
+                    else:
+                        find_module['models'].append({'name': permission['content_type__model'], 'permissions':[permission['codename']], 'attributes': []})
+            else:
+                split_codename = permission['codename'].split('__')
+                if len(split_codename) > 1:
+                    module = {'name': None, 'models': []}
+                    module['name'] = permission['content_type__app_label']
+                    model = {'name': None, 'permissions': [], 'attributes': []}
+                    model['name'] = permission['content_type__model']
+                    model['attributes'].append({'name': split_codename[-1], 'permissions': [permission['codename']]})
+                    module['models'].append[model]
+                    results.append(module)
+                else:
+                    results.append({'name': permission['content_type__app_label'], 'models': [{'name': permission['content_type__model'], 'permissions': [permission['codename']], 'attributes':[]}]})
 
-        permissions = Permission.objects.filter(content_type__app_label='custom_content')
-        result = []
         # for p in permissions:
         #     c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
         #     find_module = next((item for item in result if item['name'] == p.content_type.model), None)
@@ -616,7 +639,7 @@ class CustomContentListViews(GenericAPIView):
         #         if c_p.attribute_name:
         #             module['attributes'].append(c_p.attribute_name)
         #         result.append(module)
-        return Response({'result': result}, status=status.HTTP_200_OK)
+        return Response(results, status=status.HTTP_200_OK)
 
 class StaffRoleCreate(GenericAPIView):
     serializer_class = StaffRoleCreateSerializer

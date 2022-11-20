@@ -34,7 +34,8 @@ ALLOWED_HOSTS = []
 AUTH_USER_MODEL = 'custom_auth.CustomUser'
 
 AUTHENTICATION_BACKENDS = [
-    'custom_auth.backends.EmailPhoneUsernameAuthenticationBackend'
+    'django.contrib.auth.backends.ModelBackend',
+    'custom_auth.backends.EmailPhoneUsernameAuthenticationBackend',
 ]
 
 REST_FRAMEWORK = {

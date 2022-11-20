@@ -61,18 +61,25 @@ class StaffProfile(models.Model):
     postal_code = models.CharField(max_length=255, blank=True)
     country = models.CharField(max_length=255, blank=True)
     profile_picture = models.ImageField(upload_to='upload/staff_profile_picture/', blank=True, null=True)
-    # roles = models.ManyToManyField(AdminRole, related_name='admins', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # class Meta:
-    #     permissions = (
-    #         ('can_view_StaffProfile_name', 'Can view StaffProfile name'),
-    #         ('can_view_StaffProfile_address', 'Can view StaffProfile address')
-    #     )
+    class Meta:
+        permissions = (
+            ('can_view_StaffProfile__name', 'Can view StaffProfile name'),
+            ('can_change_StaffProfile__name', 'Can change StaffProfile name'),
+            ('can_view_StaffProfile__address', 'Can view StaffProfile address'),
+            ('can_change_StaffProfile__address', 'Can change StaffProfile address'),
+            ('can_view_StaffProfile__postal_code', 'Can view StaffProfile postal_code'),
+            ('can_change_StaffProfile__postal_code', 'Can change StaffProfile postal_code'),
+            ('can_view_StaffProfile__country', 'Can view StaffProfile country'),
+            ('can_change_StaffProfile__country', 'Can change StaffProfile country'),
+            ('can_view_StaffProfile__profile_picture', 'Can view StaffProfile profile_picture'),
+            ('can_change_StaffProfile__profile_picture', 'Can change StaffProfile profile_picture'),
+        )
 
     def __str__(self) -> str:
-        return self.name
+        return self.user.email
 
 
     
@@ -98,6 +105,7 @@ class CustomerProfile(models.Model):
     phone_number_history = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
 
     def __str__(self) -> str:
         return self.name

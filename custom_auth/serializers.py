@@ -69,14 +69,13 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
 
 class CustomUserSerializers(serializers.ModelSerializer):
     customer_profile = CustomerProfileSerializers(required = False)
-    staff_profile = StaffProfileSerializers(required = False)
     password = serializers.CharField(
         max_length=68, min_length=8, write_only=True)
 
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'auth_providers', 'customer_profile', 'staff_profile']
+        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'auth_providers', 'customer_profile']
 
     def validate_password(self, value):
         if len(value) < 8:
@@ -85,23 +84,11 @@ class CustomUserSerializers(serializers.ModelSerializer):
     
     def create(self, validated_data):
         customer_profile_data = validated_data.pop('customer_profile') if 'customer_profile' in validated_data else None
-        staff_profile_data = validated_data.pop('staff_profile') if 'staff_profile' in validated_data else None
-        user_type = validated_data.pop('user_type')
-        if user_type == 3:
-            user = CustomUser.objects.create_superuser(validated_data.pop('email'), validated_data.pop('password'), 
+        user = CustomUser.objects.create_user(validated_data.pop('email'), validated_data.pop('password'), 
             validated_data.pop('username'), **validated_data)
-        elif user_type == 2:
-            user = CustomUser.objects.create_staffuser(validated_data.pop('email'), validated_data.pop('password'), 
-            validated_data.pop('username'), user_type, **validated_data)
-        else:
-            user = CustomUser.objects.create_user(validated_data.pop('email'), validated_data.pop('password'), 
-            validated_data.pop('username'), user_type, **validated_data)
         user.auth_providers.append('email')
         user.save()
-        if user_type == 1:
-            CustomerProfile.objects.create(user=user, **customer_profile_data)
-        else:
-            StaffProfile.objects.create(user=user, **staff_profile_data)
+        CustomerProfile.objects.create(user=user, **customer_profile_data)
         return user
 
 
