@@ -47,7 +47,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
 import string
 from random import *
-from django.db.models import Q
+from utils.permissions import CustomPermission
 
 
 class CustomRedirect(HttpResponsePermanentRedirect):
@@ -546,16 +546,18 @@ class SendEmailView(GenericAPIView):
 
 
 class CustomContentListViews(GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = PermissionSerializer
+    perm_slug = "auth.permission"
     def get(self, request):
-        permissions = Permission.objects.filter(content_type__app_label__in=['custom_auth','social_auth','country_app']).values('content_type__app_label', 'content_type__model', 'codename')
+        permissions = Permission.objects.filter(content_type__app_label__in=['custom_auth','social_auth','country_app', 'auth']).values('content_type__app_label', 'content_type__model', 'codename')
         results = structure_role_permissions(permissions)
         return Response(results, status=status.HTTP_200_OK)
 
 class StaffRoleCreate(GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffRoleCreateSerializer
+    perm_slug = "auth.group"
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -564,9 +566,9 @@ class StaffRoleCreate(GenericAPIView):
 
 class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Group.objects.all()
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffRoleDetailsSerializer
-
+    perm_slug = "auth.group"
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -576,16 +578,20 @@ class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class StaffRoleListView(GenericAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
+    perm_slug = "auth.group"
     def get(self, request):
+        print('request user:', request.user)
+        print('request auth:', request.auth)
         roles = Group.objects.all()
         results = [{'id':role.id, 'name':role.name, 'moduels': structure_role_permissions(role.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))} for role in roles]
         return Response(results, status=status.HTTP_200_OK)
 
 
 class CreateStaffUser(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffUserSerializer
-    
+    perm_slug = "custom_auth.customuser"
     def post(self, request):
         characters = string.ascii_letters + string.punctuation  + string.digits
         password =  "".join(choice(characters) for x in range(randint(8, 16)))
@@ -609,9 +615,9 @@ class CreateStaffUser(GenericAPIView):
 
 
 class StaffProfileView(RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffUserDetailsSerializer
-
+    perm_slug = "auth.staffprofile"
     def get_object(self):
         return get_object_or_404(CustomUser, id=self.request.user.id)
     
@@ -619,9 +625,9 @@ class StaffProfileView(RetrieveUpdateAPIView):
         return self.update(request, *args, **kwargs)
 
 class StaffProfilePictureView(RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffProfilePictureSerializer
-
+    perm_slug = "auth.staffprofile"
     def get_object(self):
         return get_object_or_404(StaffProfile, user=self.request.user)
 

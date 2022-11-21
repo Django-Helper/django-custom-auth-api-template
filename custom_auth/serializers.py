@@ -460,9 +460,9 @@ class StaffRoleCreateSerializer(serializers.Serializer):
 
 
 class StaffRoleDetailsSerializer(serializers.ModelSerializer):
-    permissions = serializers.JSONField(write_only=True)
+    permissions = serializers.JSONField(required=False, write_only=True)
     modules = serializers.JSONField(read_only=True)
-    remove_permissions = serializers.JSONField(write_only=True)
+    remove_permissions = serializers.JSONField(required=False,write_only=True)
 
     class Meta:
         model = Group
@@ -481,7 +481,8 @@ class StaffRoleDetailsSerializer(serializers.ModelSerializer):
                 instance.permissions.remove(permission)
         if new_permissions:
             permissions = get_permissions(new_permissions)
-            instance.permissions.set(permissions)
+            for permission in permissions:
+                instance.permissions.add(permission)
         instance.save()
         validated_data['id'] = instance.id
         validated_data['name'] = instance.name
