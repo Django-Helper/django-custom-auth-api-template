@@ -19,7 +19,6 @@ class CustomPermission(BasePermission):
         return perm
 
     def has_permission(self, request, view):
-        print('class view:', view)
         perm = self._get_permission(
             method=request.method, perm_slug=view.perm_slug
         )
