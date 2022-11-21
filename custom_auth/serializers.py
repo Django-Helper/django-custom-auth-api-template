@@ -77,7 +77,7 @@ class CustomUserSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'password', 'user_type', 'auth_providers', 'customer_profile']
+        fields = ['email', 'phone_number', 'username', 'password', 'auth_providers', 'customer_profile']
 
     def validate_password(self, value):
         if len(value) < 8:
@@ -110,6 +110,8 @@ class LoginSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         max_length=255, min_length=3)
 
+    permissions = serializers.JSONField(read_only=True)
+
     tokens = serializers.SerializerMethodField('get_tokens')
 
     def get_tokens(self, obj):
@@ -122,7 +124,7 @@ class LoginSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'phone_number', 'password', 'is_verified', 'tokens', 'auth_providers']
+        fields = ['email', 'username', 'phone_number', 'password', 'is_verified', 'tokens', 'auth_providers', 'permissions']
 
     
     def validate(self, attrs):
@@ -140,15 +142,28 @@ class LoginSerializer(serializers.ModelSerializer):
             raise AuthenticationFailed('Account disabled, contact admin')
         # if not user.is_verified:
         #     raise AuthenticationFailed('Email is not verified')
+        if user.is_staff:
+            user_permissions = user.user_permissions.all().values('content_type__app_label', 'content_type__model', 'codename') | Permission.objects.filter(group__user=user).values('content_type__app_label', 'content_type__model', 'codename')
+            permissions = structure_role_permissions(user_permissions)
 
-        return {
+            return {
             'email': user.email,
             'phone_number': user.phone_number,
             'username': user.username,
             'is_verified': user.is_verified,
             'providers': user.auth_providers,
-            'tokens': user.tokens
+            'tokens': user.tokens,
+            'permissions': permissions
         }
+        else:
+            return {
+                'email': user.email,
+                'phone_number': user.phone_number,
+                'username': user.username,
+                'is_verified': user.is_verified,
+                'providers': user.auth_providers,
+                'tokens': user.tokens
+            }
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
@@ -459,7 +474,7 @@ class StaffRoleDetailsSerializer(serializers.ModelSerializer):
         new_permissions = validated_data.pop('permissions') if 'permissions' in validated_data else None
         remove_permissions = validated_data.pop('remove_permissions') if 'remove_permissions' in validated_data else None
         if name:
-            instance.name = name
+            instance.name = name.lower()
         if remove_permissions:
             permissions = get_permissions(remove_permissions)
             for permission in permissions:
@@ -479,15 +494,30 @@ class StaffUserDetailsSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(read_only=True)
     phone_number = serializers.CharField(read_only=True)
     is_verified = serializers.BooleanField(read_only=True)
+    roles = serializers.ListField(write_only=True)
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'is_verified', 'groups', 'staff_profile']
+        fields = ['email', 'phone_number', 'username', 'is_verified', 'roles', 'groups', 'staff_profile']
+
+    def validate_roles(self, value):
+        for role in value:
+            print('role:', role)
+            try:
+                Group.objects.get(name=role.lower())
+            except:
+                raise serializers.ValidationError(f'Role {role} does not exit.') 
+        return value
     
     def update(self, instance, validated_data):
+        roles = validated_data.pop('roles')
         staff_profile_serializer = self.fields['staff_profile']
         staff_profile = instance.staff_profile
         staff_profile_data = validated_data.pop('staff_profile')
         staff_profile_serializer.update(staff_profile, staff_profile_data)
+        for role in roles:
+            group = Group.objects.get(name=role.lower())
+            group.user_set.add(instance)
+            group.save()
         return super().update(instance, validated_data)
 
 class StaffProfilePictureSerializer(serializers.ModelSerializer):
@@ -511,36 +541,35 @@ class StaffUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         max_length=68, min_length=8, write_only=True)
     
-    groups = serializers.ListField(required = True, write_only=True)
+    roles = serializers.ListField(required = True, write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'password', 'groups', 'auth_providers', 'staff_profile']
+        fields = ['email', 'phone_number', 'username', 'password', 'roles', 'auth_providers', 'staff_profile']
 
     def validate_password(self, value):
         if len(value) < 8:
             raise serializers.ValidationError('Password length must be 8 or more.')
         return value
 
-    def validate_groups(self, value):
-        if len(value) <= 0:
-            raise serializers.ValidationError('Roles Can not be blank.')
+    def validate_roles(self, value):
         for role in value:
+            print('role:', role)
             try:
-                Group.objects.get(name=role)
+                Group.objects.get(name=role.lower())
             except:
                 raise serializers.ValidationError(f'Role {role} does not exit.') 
         return value
     
     def create(self, validated_data):
-        roles = validated_data.pop('groups')
+        roles = validated_data.pop('roles')
         staff_profile_data = validated_data.pop('staff_profile') if 'staff_profile' in validated_data else None
         user = CustomUser.objects.create_staffuser(validated_data.pop('email'), validated_data.pop('password'), 
         validated_data.pop('username'), **validated_data)
         user.auth_providers.append('email')
         user.save()
         for role in roles:
-            group = Group.objects.get(name=role)
+            group = Group.objects.get(name=role.lower())
             group.user_set.add(user)
             group.save()
         StaffProfile.objects.create(user=user, **staff_profile_data)

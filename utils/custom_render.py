@@ -7,7 +7,7 @@ class CustomJSONRenderer(renderers.JSONRenderer):
     charset='utf-8'
     def render(self, data, accepted_media_type=None, renderer_context=None):
         errors = []
-        print('custom renderer:', data)
+        # print('custom renderer:', data)
         # if 'ErrorDetail' in str(data):
         if 'errors' in str(data):
             if isinstance(data['errors'], dict):

@@ -564,7 +564,7 @@ class StaffRoleCreate(GenericAPIView):
 
 class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Group.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     serializer_class = StaffRoleDetailsSerializer
 
     def destroy(self, request, *args, **kwargs):
@@ -576,7 +576,7 @@ class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class StaffRoleListView(GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         roles = Group.objects.all()
         results = [{'id':role.id, 'name':role.name, 'moduels': structure_role_permissions(role.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))} for role in roles]
@@ -600,7 +600,7 @@ class CreateStaffUser(GenericAPIView):
             try:
                 kwargs = {'data': data}
                 send_email.delay(**kwargs)
-                context = {'message': 'registration successfull. Check verify email and verfiy. Verify email expired within 30 minutes'}
+                context = {'message': 'registration successfull. Check verify email and verfiy. Verify email expired within 30 minutes.'}
                 return Response(context, status=status.HTTP_201_CREATED)
             except:
                 return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -21,7 +21,7 @@ def custom_exception_handler(exc, context):
         response.data = {'message': 'Invalid', 'errors': response.data,'success': False}
     else:
         message = response.data.get('detail')
-        print('custom exception:', response.data)
+        # print('custom exception:', response.data)
         if not message:
             for field, value in response.data.items():
                 errors.append("{} : {}".format(field, " ".join(value)))
