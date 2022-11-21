@@ -11,7 +11,7 @@ from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer,
                             RequestPrimaryPhoneOtpSerializer, LoginOTPRequestSerializer,
                             LoginOTPVerifySerializer, StaffProfileSerializers, PermissionSerializer,
                             StaffUserSerializer, StaffProfilePictureSerializer, StaffUserDetailsSerializer,
-                            StaffRoleCreateSerializer
+                            StaffRoleCreateSerializer, StaffRoleDetailsSerializer
                             )
 from rest_framework.views import APIView
 from rest_framework.generics import (GenericAPIView, RetrieveUpdateAPIView, 
@@ -34,7 +34,8 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.shortcuts import redirect
 from django.http import HttpResponsePermanentRedirect
 import os
-from .utils import get_registration_verify_email_data, get_staff_registration_verify_email_data, structure_role_permissions
+from .utils import (get_registration_verify_email_data, get_staff_registration_verify_email_data, 
+                    structure_role_permissions, get_permissions)
 import random
 from django.utils import timezone
 from .tokens import PrimaryEmailUpdateTokenGenerator, PrimaryPhoneUpdateTokenGenerator
@@ -46,6 +47,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
 import string
 from random import *
+from django.db.models import Q
 
 
 class CustomRedirect(HttpResponsePermanentRedirect):
@@ -558,42 +560,17 @@ class StaffRoleCreate(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    # def put(self, request):
-    #     data = request.data
-    #     new_group = Group.objects.get(id=data['id'])
-    #     new_group.name = data['name'].lower()
-    #     for module in data['modules']:
-    #         for permission in module['permissions']:
-    #             concat_p = permission+'_'+module['name']
-    #             p = Permission.objects.filter(codename=concat_p)[0]
-    #             new_group.permissions.add(p)
 
-    #         if 'remove_permissions' in module:
-    #             for r_p in module['remove_permissions']:
-    #                 concat_p = r_p+'_'+module['name']
-    #                 p = Permission.objects.filter(codename=concat_p)[0]
-    #                 new_group.permissions.remove(p)
+class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Group.objects.all()
+    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffRoleDetailsSerializer
 
-    #         if 'attributes' in module:
-    #             for attribute in module['attributes']:
-    #                 for permission in attribute['permissions']:
-    #                     concat_p = permission+'_'+'product'+'_'+attribute['name']
-    #                     print('concat_p:', concat_p)
-    #                     p = Permission.objects.filter(codename=concat_p)[0]
-    #                     print('p:', p)
-    #                     new_group.permissions.add(p)
-                    
-    #                 if 'remove_permissions' in attribute:
-    #                     for r_p in attribute['remove_permissions']:
-    #                         concat_p = r_p+'_'+'product'+'_'+attribute['name']
-    #                         p = Permission.objects.filter(codename=concat_p)[0]
-    #                         new_group.permissions.remove(p)
-    #     new_group.save()
-    #     result = {}
-    #     result['name'] = new_group.name
-    #     # result['modules'] = structure_role_list(new_group.permissions.all())
-    #     return Response(result, status=status.HTTP_200_OK)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({'message': 'Group/Role Delete Successfully!'},status=status.HTTP_204_NO_CONTENT)
+
 
 
 

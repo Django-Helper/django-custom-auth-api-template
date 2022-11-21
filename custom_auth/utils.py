@@ -3,6 +3,8 @@ import jwt
 from auth_api import settings
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
+from django.contrib.auth.models import Permission, Group
+from django.db.models import Q
 
 def get_registration_verify_email_data(user, request):
     payload = {
@@ -75,3 +77,9 @@ def structure_role_permissions(permissions):
                 else:
                     results.append({'name': permission['content_type__app_label'], 'models': [{'name': permission['content_type__model'], 'permissions': [permission['codename']], 'attributes':[]}]})
     return results
+
+def get_permissions(permission_objs):
+    codenames = [item['codename'] for item in permission_objs]
+    content_type__app_labels = [item['content_type__app_label'] for item in permission_objs]
+    permissions = Permission.objects.filter(Q(codename__in=codenames) & Q(content_type__app_label__in=content_type__app_labels))
+    return permissions

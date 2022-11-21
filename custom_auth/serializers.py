@@ -19,7 +19,7 @@ import os
 from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
-from .utils import structure_role_permissions
+from .utils import structure_role_permissions, get_permissions
 
 
 
@@ -442,6 +442,36 @@ class StaffRoleCreateSerializer(serializers.Serializer):
         validated_data['name'] = new_group.name
         validated_data['modules'] = structure_role_permissions(new_group.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))
         return validated_data
+
+
+class StaffRoleDetailsSerializer(serializers.ModelSerializer):
+    permissions = serializers.JSONField(write_only=True)
+    modules = serializers.JSONField(read_only=True)
+    remove_permissions = serializers.JSONField(write_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'permissions', 'modules', 'remove_permissions']
+
+    def update(self, instance, validated_data):
+        name = validated_data.pop('name') if 'name' in validated_data else None
+        permissions = validated_data.pop('permissions') if 'permissions' in validated_data else None
+        remove_permissions = validated_data.pop('remove_permissions') if 'remove_permissions' in validated_data else None
+        if name:
+            instance.name = name
+        if remove_permissions:
+            permissions = get_permissions(remove_permissions)
+            for permission in permissions:
+                instance.permissions.remove(permission)
+        if permissions:
+            permissions = get_permissions(permissions)
+            instance.permissions.set(permissions)
+        instance.save()
+        validated_data['id'] = instance.id
+        validated_data['name'] = instance.name
+        validated_data['modules'] = structure_role_permissions(instance.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))
+        return validated_data
+
 
 class StaffUserDetailsSerializer(serializers.ModelSerializer):
     staff_profile = StaffProfileSerializers(required = False)

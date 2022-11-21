@@ -12,6 +12,7 @@ from .views import (Register, VerifyRegisterEmail,
                     LoginOTPRequest, LoginWithOTP, SendEmailView, CustomContentListViews,
                     StaffRoleCreate, StaffRoleListView, CreateStaffUser, StaffProfilePictureView,
                     StaffProfileView, StaffModulePermissionView, StaffModuleAttributePermissionView,
+                    StaffRoleDetailView
                     # AdminRoleListView,
                     # AdminRoleDetailView, ModuleListView, ModuleDetailView, PermissionListView,
                     # PermissionDetailView, ModulePermissionListView, ModulePermissionDetailView
@@ -51,7 +52,7 @@ urlpatterns = [
     path('send_email_template/', SendEmailView.as_view(), name='send_email_template'),
     path('contents/', CustomContentListViews.as_view(), name='contents'),
     path('create_role/', StaffRoleCreate.as_view(), name='create_role'),
-#     path('update_role/', StaffRoleCreate.as_view(), name='update_role'),
+    path('role/<int:pk>/', StaffRoleDetailView.as_view(), name='update_or_delete_role'),
     path('roles/', StaffRoleListView.as_view(), name='roles'),
     path('create_staff/', CreateStaffUser.as_view(), name='create_staff'),
     path('staff_profile/', StaffProfileView.as_view(), name='staff_profile'),
