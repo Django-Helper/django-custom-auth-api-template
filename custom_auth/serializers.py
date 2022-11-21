@@ -454,8 +454,9 @@ class StaffRoleDetailsSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'permissions', 'modules', 'remove_permissions']
 
     def update(self, instance, validated_data):
+        print('update role:', validated_data)
         name = validated_data.pop('name') if 'name' in validated_data else None
-        permissions = validated_data.pop('permissions') if 'permissions' in validated_data else None
+        new_permissions = validated_data.pop('permissions') if 'permissions' in validated_data else None
         remove_permissions = validated_data.pop('remove_permissions') if 'remove_permissions' in validated_data else None
         if name:
             instance.name = name
@@ -463,8 +464,8 @@ class StaffRoleDetailsSerializer(serializers.ModelSerializer):
             permissions = get_permissions(remove_permissions)
             for permission in permissions:
                 instance.permissions.remove(permission)
-        if permissions:
-            permissions = get_permissions(permissions)
+        if new_permissions:
+            permissions = get_permissions(new_permissions)
             instance.permissions.set(permissions)
         instance.save()
         validated_data['id'] = instance.id

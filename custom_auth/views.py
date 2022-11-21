@@ -546,7 +546,7 @@ class SendEmailView(GenericAPIView):
 
 
 class CustomContentListViews(GenericAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = PermissionSerializer
     def get(self, request):
         permissions = Permission.objects.filter(content_type__app_label__in=['custom_auth','social_auth','country_app']).values('content_type__app_label', 'content_type__model', 'codename')
@@ -554,6 +554,7 @@ class CustomContentListViews(GenericAPIView):
         return Response(results, status=status.HTTP_200_OK)
 
 class StaffRoleCreate(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = StaffRoleCreateSerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -563,7 +564,7 @@ class StaffRoleCreate(GenericAPIView):
 
 class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Group.objects.all()
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = StaffRoleDetailsSerializer
 
     def destroy(self, request, *args, **kwargs):
@@ -575,6 +576,7 @@ class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class StaffRoleListView(GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         roles = Group.objects.all()
         results = [{'id':role.id, 'name':role.name, 'moduels': structure_role_permissions(role.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))} for role in roles]
