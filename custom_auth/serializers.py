@@ -19,6 +19,8 @@ import os
 from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
+from .utils import structure_role_permissions
+
 
 
 class StaffProfileSerializers(serializers.ModelSerializer):
@@ -417,79 +419,29 @@ class PermissionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# def structure_role_list(permissions):
-#     result = []
-#     for p in permissions:
-#         c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
-#         find_module = next((item for item in result if item['name'] == p.content_type.model), None)
-#         if find_module:
-#             if c_p.attribute_name:
-#                 find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
-#                 if find_attr:
-#                     find_attr['permissions'].append(p.codename)
-#                 else:
-#                     a = {
-#                         'name': '',
-#                         'permissions': []
-#                         }
-#                     a['name'] = c_p.attribute_name
-#                     a['permissions'].append(p.codename)
-#                     find_module['attributes'].append(a)
-#             else:
-#                 find_module['permissions'].append(p.codename)
-#         else:
-#             module = {
-#                     'name': '',
-#                     'permissions': [],
-#                     'attributes': []
-#                 }
-#             module['name'] = p.content_type.model
-#             if c_p.attribute_name:
-#                 a = {
-#                         'name': '',
-#                         'permissions': []
-#                     }
-#                 a['name'] = c_p.attribute_name
-#                 a['permissions'].append(p.codename)
-#                 module['attributes'].append(a)
-#             else:
-#                 module['permissions'].append(p.codename)
-#             result.append(module)
-#     return result
-
 class StaffRoleCreateSerializer(serializers.Serializer):
+    id = serializers.UUIDField(required=False, read_only=True)
     name = serializers.CharField(required=True)
-    modules = serializers.JSONField(required=True)
+    permissions = serializers.JSONField(required=True, write_only=True)
+    modules = serializers.JSONField(required=False, read_only=True)
 
     class Meta:
         fields = '__all__'
     
     def create(self, validated_data):
         name = validated_data.pop('name')
-        modules = validated_data.pop('modules')
+        permission_objts = validated_data.pop('permissions')
         new_group, created = Group.objects.get_or_create(name=name.lower())
-        for module in modules:
-            for permission in module['permissions']:
-                concat_p = permission+'_'+module['name']
-                p = Permission.objects.filter(codename=concat_p)[0]
-                new_group.permissions.add(p)
-            
-
-            if 'attributes' in module:
-                for attribute in module['attributes']:
-                    for permission in attribute['permissions']:
-                        concat_p = permission+'_'+'product'+'_'+attribute['name']
-                        print('concat_p:', concat_p)
-                        p = Permission.objects.filter(codename=concat_p)[0]
-                        print('p:', p)
-                        new_group.permissions.add(p)
-                    
+        if permission_objts:
+            codenames = [item['codename'] for item in permission_objts]
+            content_type__app_labels = [item['content_type__app_label'] for item in permission_objts]
+            permissions = Permission.objects.filter(Q(codename__in=codenames) & Q(content_type__app_label__in=content_type__app_labels))
+            new_group.permissions.set(permissions)   
         new_group.save()
-        result = {}
-        result['id'] = new_group.id
-        result['name'] = new_group.name
-        # result['modules'] = structure_role_list(new_group.permissions.all())
-        return result
+        validated_data['id'] = new_group.id
+        validated_data['name'] = new_group.name
+        validated_data['modules'] = structure_role_permissions(new_group.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))
+        return validated_data
 
 class StaffUserDetailsSerializer(serializers.ModelSerializer):
     staff_profile = StaffProfileSerializers(required = False)

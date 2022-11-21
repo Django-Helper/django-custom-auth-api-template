@@ -34,7 +34,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.shortcuts import redirect
 from django.http import HttpResponsePermanentRedirect
 import os
-from .utils import get_registration_verify_email_data, get_staff_registration_verify_email_data
+from .utils import get_registration_verify_email_data, get_staff_registration_verify_email_data, structure_role_permissions
 import random
 from django.utils import timezone
 from .tokens import PrimaryEmailUpdateTokenGenerator, PrimaryPhoneUpdateTokenGenerator
@@ -548,97 +548,7 @@ class CustomContentListViews(GenericAPIView):
     serializer_class = PermissionSerializer
     def get(self, request):
         permissions = Permission.objects.filter(content_type__app_label__in=['custom_auth','social_auth','country_app']).values('content_type__app_label', 'content_type__model', 'codename')
-        results = []
-        for permission in permissions:
-            find_module = next((item for item in results if item['name'] == permission['content_type__app_label']), None)
-            if find_module:
-                find_model = next((item for item in find_module['models'] if item['name'] == permission['content_type__model']), None)
-                if find_model:
-                    split_codename = permission['codename'].split('__')
-                    if len(split_codename) > 1:
-                        find_attribute = next((item for item in find_model['attributes'] if item['name'] == split_codename[-1]), None)
-                        if find_attribute:
-                            find_attribute['permissions'].append(permission['codename'])
-                        else:
-                            find_model['attributes'].append({'name':split_codename[-1],'permissions':[permission['codename']]})
-                    else:
-                        find_model['permissions'].append(permission['codename'])
-                else:
-                    split_codename = permission['codename'].split('__')
-                    if len(split_codename) > 1:
-                        model = {'name': None, 'permissions': [], 'attributes': []}
-                        model['name'] = permission['content_type__model']
-                        model['attributes'].append({'name': split_codename[-1], 'permissions':[permission['codename']]})
-                        find_module['models'].append(model)
-                    else:
-                        find_module['models'].append({'name': permission['content_type__model'], 'permissions':[permission['codename']], 'attributes': []})
-            else:
-                split_codename = permission['codename'].split('__')
-                if len(split_codename) > 1:
-                    module = {'name': None, 'models': []}
-                    module['name'] = permission['content_type__app_label']
-                    model = {'name': None, 'permissions': [], 'attributes': []}
-                    model['name'] = permission['content_type__model']
-                    model['attributes'].append({'name': split_codename[-1], 'permissions': [permission['codename']]})
-                    module['models'].append[model]
-                    results.append(module)
-                else:
-                    results.append({'name': permission['content_type__app_label'], 'models': [{'name': permission['content_type__model'], 'permissions': [permission['codename']], 'attributes':[]}]})
-
-        # for p in permissions:
-        #     c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
-        #     find_module = next((item for item in result if item['name'] == p.content_type.model), None)
-        #     if find_module:
-        #         if c_p.attribute_name:
-        #             find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
-        #             if find_attr:
-        #                 find_attr['permissions'].append(p.codename)
-        #             else:
-        #                 a = {
-        #                 'name': '',
-        #                 'permissions': []
-        #                 }
-        #                 a['name'] = c_p.attribute_name
-        #                 a['permissions'].append(p.codename)
-        #                 find_module['attributes'].append(a)
-        #         else:
-        #             find_module['permissions'].append(p.codename)
-        #     else:
-        #         module = {
-        #             'name': '',
-        #             'permissions': [],
-        #             'attributes': []
-        #         }
-        #         module['name'] = p.content_type.model
-        #         if c_p.attribute_name:
-        #             a = {
-        #                 'name': '',
-        #                 'permissions': []
-        #             }
-        #             a['name'] = c_p.attribute_name
-        #             a['permissions'].append(p.codename)
-        #             module['attributes'].append(a)
-        #         else:
-        #             module['permissions'].append(p.codename)
-        #         result.append(module)
-
-        # for p in permissions:
-        #     c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
-        #     find_module = next((item for item in result if item['name'] == p.content_type.model), None)
-        #     if find_module:
-        #         if c_p.attribute_name:
-        #             find_attr = next((item for item in find_module['attributes'] if item == c_p.attribute_name), None)
-        #             if not find_attr:
-        #                 find_module['attributes'].append(c_p.attribute_name)
-        #     else:
-        #         module = {
-        #             'name': '',
-        #             'attributes': []
-        #         }
-        #         module['name'] = p.content_type.model
-        #         if c_p.attribute_name:
-        #             module['attributes'].append(c_p.attribute_name)
-        #         result.append(module)
+        results = structure_role_permissions(permissions)
         return Response(results, status=status.HTTP_200_OK)
 
 class StaffRoleCreate(GenericAPIView):
@@ -646,97 +556,51 @@ class StaffRoleCreate(GenericAPIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def put(self, request):
-        data = request.data
-        new_group = Group.objects.get(id=data['id'])
-        new_group.name = data['name'].lower()
-        for module in data['modules']:
-            for permission in module['permissions']:
-                concat_p = permission+'_'+module['name']
-                p = Permission.objects.filter(codename=concat_p)[0]
-                new_group.permissions.add(p)
+    # def put(self, request):
+    #     data = request.data
+    #     new_group = Group.objects.get(id=data['id'])
+    #     new_group.name = data['name'].lower()
+    #     for module in data['modules']:
+    #         for permission in module['permissions']:
+    #             concat_p = permission+'_'+module['name']
+    #             p = Permission.objects.filter(codename=concat_p)[0]
+    #             new_group.permissions.add(p)
 
-            if 'remove_permissions' in module:
-                for r_p in module['remove_permissions']:
-                    concat_p = r_p+'_'+module['name']
-                    p = Permission.objects.filter(codename=concat_p)[0]
-                    new_group.permissions.remove(p)
+    #         if 'remove_permissions' in module:
+    #             for r_p in module['remove_permissions']:
+    #                 concat_p = r_p+'_'+module['name']
+    #                 p = Permission.objects.filter(codename=concat_p)[0]
+    #                 new_group.permissions.remove(p)
 
-            if 'attributes' in module:
-                for attribute in module['attributes']:
-                    for permission in attribute['permissions']:
-                        concat_p = permission+'_'+'product'+'_'+attribute['name']
-                        print('concat_p:', concat_p)
-                        p = Permission.objects.filter(codename=concat_p)[0]
-                        print('p:', p)
-                        new_group.permissions.add(p)
+    #         if 'attributes' in module:
+    #             for attribute in module['attributes']:
+    #                 for permission in attribute['permissions']:
+    #                     concat_p = permission+'_'+'product'+'_'+attribute['name']
+    #                     print('concat_p:', concat_p)
+    #                     p = Permission.objects.filter(codename=concat_p)[0]
+    #                     print('p:', p)
+    #                     new_group.permissions.add(p)
                     
-                    if 'remove_permissions' in attribute:
-                        for r_p in attribute['remove_permissions']:
-                            concat_p = r_p+'_'+'product'+'_'+attribute['name']
-                            p = Permission.objects.filter(codename=concat_p)[0]
-                            new_group.permissions.remove(p)
-        new_group.save()
-        result = {}
-        result['name'] = new_group.name
-        # result['modules'] = structure_role_list(new_group.permissions.all())
-        return Response(result, status=status.HTTP_200_OK)
+    #                 if 'remove_permissions' in attribute:
+    #                     for r_p in attribute['remove_permissions']:
+    #                         concat_p = r_p+'_'+'product'+'_'+attribute['name']
+    #                         p = Permission.objects.filter(codename=concat_p)[0]
+    #                         new_group.permissions.remove(p)
+    #     new_group.save()
+    #     result = {}
+    #     result['name'] = new_group.name
+    #     # result['modules'] = structure_role_list(new_group.permissions.all())
+    #     return Response(result, status=status.HTTP_200_OK)
 
-# def structure_role_list(permissions):
-#     result = []
-#     for p in permissions:
-#         c_p = CustomPermission.objects.get(permission_ptr_id=p.id)
-#         find_module = next((item for item in result if item['name'] == p.content_type.model), None)
-#         if find_module:
-#             if c_p.attribute_name:
-#                 find_attr = next((item for item in find_module['attributes'] if item['name'] == c_p.attribute_name), None)
-#                 if find_attr:
-#                     find_attr['permissions'].append(p.codename)
-#                 else:
-#                     a = {
-#                         'name': '',
-#                         'permissions': []
-#                         }
-#                     a['name'] = c_p.attribute_name
-#                     a['permissions'].append(p.codename)
-#                     find_module['attributes'].append(a)
-#             else:
-#                 find_module['permissions'].append(p.codename)
-#         else:
-#             module = {
-#                     'name': '',
-#                     'permissions': [],
-#                     'attributes': []
-#                 }
-#             module['name'] = p.content_type.model
-#             if c_p.attribute_name:
-#                 a = {
-#                         'name': '',
-#                         'permissions': []
-#                     }
-#                 a['name'] = c_p.attribute_name
-#                 a['permissions'].append(p.codename)
-#                 module['attributes'].append(a)
-#             else:
-#                 module['permissions'].append(p.codename)
-#             result.append(module)
-#     return result
+
 
 class StaffRoleListView(GenericAPIView):
     def get(self, request):
         roles = Group.objects.all()
-        results = []
-        for role in roles:
-            d = {
-                'name': '',
-                'modules': []
-            }
-            d['id'] = role.id
-            d['name'] = role.name
-            # d['modules'] = structure_role_list(role.permissions.all())
-            results.append(d)
+        results = [{'id':role.id, 'name':role.name, 'moduels': structure_role_permissions(role.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))} for role in roles]
         return Response(results, status=status.HTTP_200_OK)
 
 

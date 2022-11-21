@@ -36,3 +36,42 @@ def get_staff_registration_verify_email_data(user, password, request):
     email_body = 'Hi '+user.username+' Use link below to verify your email \n'+absurl+'\n'+"Your Temporary Password is:"+'\n'+password
     data = {'email_body':email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
     return data
+
+def structure_role_permissions(permissions):
+    results = []
+    for permission in permissions:
+            find_module = next((item for item in results if item['name'] == permission['content_type__app_label']), None)
+            if find_module:
+                find_model = next((item for item in find_module['models'] if item['name'] == permission['content_type__model']), None)
+                if find_model:
+                    split_codename = permission['codename'].split('__')
+                    if len(split_codename) > 1:
+                        find_attribute = next((item for item in find_model['attributes'] if item['name'] == split_codename[-1]), None)
+                        if find_attribute:
+                            find_attribute['permissions'].append(permission['codename'])
+                        else:
+                            find_model['attributes'].append({'name':split_codename[-1],'permissions':[permission['codename']]})
+                    else:
+                        find_model['permissions'].append(permission['codename'])
+                else:
+                    split_codename = permission['codename'].split('__')
+                    if len(split_codename) > 1:
+                        model = {'name': None, 'permissions': [], 'attributes': []}
+                        model['name'] = permission['content_type__model']
+                        model['attributes'].append({'name': split_codename[-1], 'permissions':[permission['codename']]})
+                        find_module['models'].append(model)
+                    else:
+                        find_module['models'].append({'name': permission['content_type__model'], 'permissions':[permission['codename']], 'attributes': []})
+            else:
+                split_codename = permission['codename'].split('__')
+                if len(split_codename) > 1:
+                    module = {'name': None, 'models': []}
+                    module['name'] = permission['content_type__app_label']
+                    model = {'name': None, 'permissions': [], 'attributes': []}
+                    model['name'] = permission['content_type__model']
+                    model['attributes'].append({'name': split_codename[-1], 'permissions': [permission['codename']]})
+                    module['models'].append[model]
+                    results.append(module)
+                else:
+                    results.append({'name': permission['content_type__app_label'], 'models': [{'name': permission['content_type__model'], 'permissions': [permission['codename']], 'attributes':[]}]})
+    return results
