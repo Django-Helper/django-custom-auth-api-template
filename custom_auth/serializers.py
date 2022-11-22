@@ -1,8 +1,3 @@
-from ast import Delete
-from dataclasses import field, fields
-import email
-from pyexpat import model
-from signal import raise_signal
 from unittest.util import _MAX_LENGTH
 from rest_framework import serializers
 from .models import (CustomUser, CustomerProfile, 
@@ -127,7 +122,7 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
 
 class LoginSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
-        max_length=68, min_length=6, write_only=True)
+        max_length=68, min_length=4, write_only=True)
     username = serializers.CharField(
         max_length=255, min_length=3)
 
@@ -513,17 +508,18 @@ class StaffRoleDetailsSerializer(serializers.ModelSerializer):
 
 class StaffUserDetailsSerializer(DynamicFieldsModelSerializer):
     staff_profile = StaffProfileSerializers(required = False)
-    email = serializers.EmailField(read_only=True)
-    phone_number = serializers.CharField(read_only=True)
+    email = serializers.EmailField(required=False) # read_only=True
+    phone_number = serializers.CharField(required=False) # read_only=True
     is_verified = serializers.BooleanField(read_only=True)
-    roles = serializers.ListField(write_only=True)
+    roles = serializers.ListField(required=False,write_only=True)
+    username = serializers.CharField(required=False)
     class Meta:
         model = CustomUser
         fields = ['email', 'phone_number', 'username', 'is_verified', 'roles', 'groups', 'staff_profile']
 
     def validate_roles(self, value):
         for role in value:
-            print('role:', role)
+            # print('role:', role)
             try:
                 Group.objects.get(name=role.lower())
             except:
@@ -544,7 +540,7 @@ class StaffUserDetailsSerializer(DynamicFieldsModelSerializer):
         else:
             raise serializers.ValidationError(f'{request.user} does not has permission to update phone_number.')
     
-    def validate_phone_number(self, value):
+    def validate_username(self, value):
         request = self.context['request']
         if has_field_permission(request, 'custom_auth', 'cusotmuser', 'username'):
             return value
@@ -566,15 +562,17 @@ class StaffUserDetailsSerializer(DynamicFieldsModelSerializer):
             raise serializers.ValidationError(f'{request.user} does not has permission to update customer_profile.')
     
     def update(self, instance, validated_data):
-        roles = validated_data.pop('roles')
+        roles = validated_data.pop('roles') if 'roles' in validated_data else None
         staff_profile_serializer = self.fields['staff_profile']
         staff_profile = instance.staff_profile
-        staff_profile_data = validated_data.pop('staff_profile')
-        staff_profile_serializer.update(staff_profile, staff_profile_data)
-        for role in roles:
-            group = Group.objects.get(name=role.lower())
-            group.user_set.add(instance)
-            group.save()
+        staff_profile_data = validated_data.pop('staff_profile') if 'staff_profile' in validated_data else None
+        if staff_profile_data:
+            staff_profile_serializer.update(staff_profile, staff_profile_data)
+        if roles:
+            for role in roles:
+                group = Group.objects.get(name=role.lower())
+                group.user_set.add(instance)
+                group.save()
         return super().update(instance, validated_data)
 
 class StaffProfilePictureSerializer(serializers.ModelSerializer):

@@ -617,9 +617,9 @@ class CreateStaffUser(GenericAPIView):
 
 
 class StaffProfileView(RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]  # CustomPermission
     serializer_class = StaffUserDetailsSerializer
-    perm_slug = "custom_auth.staffprofile"
+    perm_slug = "custom_auth.customuser"
     def get_object(self):
         return get_object_or_404(CustomUser, id=self.request.user.id)
     
