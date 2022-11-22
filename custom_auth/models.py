@@ -48,6 +48,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             'access': str(refresh.access_token)
         }
 
+    class Meta:
+        permissions = (
+            ('can_view_customuser__email', 'Can view StaffProfile email'),
+            ('can_change_customuser__email', 'Can change customuser email'),
+            ('can_view_customuser__phone_number', 'Can view customuser phone_number'),
+            ('can_change_customuser__phone_number', 'Can change customuser phone_number'),
+            ('can_view_customuser__username', 'Can view customuser username'),
+            ('can_change_customuser__username', 'Can change customuser username'),
+            ('can_view_customuser__staff_profile', 'Can view customuser staff_profile'),
+            ('can_change_customuser__staff_profile', 'Can change customuser staff_profile'),
+            ('can_view_customuser__customer_profile', 'Can view customuser customer_profile'),
+            ('can_change_customuser__customer_profile', 'Can change customuser customer_profile'),
+        )
+
 
 
 class StaffProfile(models.Model):
@@ -66,16 +80,16 @@ class StaffProfile(models.Model):
 
     class Meta:
         permissions = (
-            ('can_view_StaffProfile__name', 'Can view StaffProfile name'),
-            ('can_change_StaffProfile__name', 'Can change StaffProfile name'),
-            ('can_view_StaffProfile__address', 'Can view StaffProfile address'),
-            ('can_change_StaffProfile__address', 'Can change StaffProfile address'),
-            ('can_view_StaffProfile__postal_code', 'Can view StaffProfile postal_code'),
-            ('can_change_StaffProfile__postal_code', 'Can change StaffProfile postal_code'),
-            ('can_view_StaffProfile__country', 'Can view StaffProfile country'),
-            ('can_change_StaffProfile__country', 'Can change StaffProfile country'),
-            ('can_view_StaffProfile__profile_picture', 'Can view StaffProfile profile_picture'),
-            ('can_change_StaffProfile__profile_picture', 'Can change StaffProfile profile_picture'),
+            ('can_view_staffprofile__name', 'Can view StaffProfile name'),
+            ('can_change_staffprofile__name', 'Can change staffprofile name'),
+            ('can_view_staffprofile__address', 'Can view staffprofile address'),
+            ('can_change_staffprofile__address', 'Can change staffprofile address'),
+            ('can_view_staffprofile__postal_code', 'Can view staffprofile postal_code'),
+            ('can_change_staffprofile__postal_code', 'Can change staffprofile postal_code'),
+            ('can_view_staffprofile__country', 'Can view staffprofile country'),
+            ('can_change_staffprofile__country', 'Can change staffprofile country'),
+            ('can_view_staffprofile__profile_picture', 'Can view staffprofile profile_picture'),
+            ('can_change_staffprofile__profile_picture', 'Can change staffprofile profile_picture'),
         )
 
     def __str__(self) -> str:

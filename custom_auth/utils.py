@@ -50,11 +50,13 @@ def structure_role_permissions(permissions):
                     if len(split_codename) > 1:
                         find_attribute = next((item for item in find_model['attributes'] if item['name'] == split_codename[-1]), None)
                         if find_attribute:
-                            find_attribute['permissions'].append(permission['codename'])
+                            if permission['codename'] not in find_attribute['permissions']:
+                                find_attribute['permissions'].append(permission['codename'])
                         else:
                             find_model['attributes'].append({'name':split_codename[-1],'permissions':[permission['codename']]})
                     else:
-                        find_model['permissions'].append(permission['codename'])
+                        if permission['codename'] not in find_model['permissions']:
+                            find_model['permissions'].append(permission['codename'])
                 else:
                     split_codename = permission['codename'].split('__')
                     if len(split_codename) > 1:
