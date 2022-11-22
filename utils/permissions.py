@@ -38,7 +38,7 @@ def has_field_permission(request, app, model, field):
     if request.method not in permission_map:
         raise MethodNotAllowed(request.method)
     perm = permission_map.get(request.method).format(app_label=app, model_name=model, field_name=field)
-
+    
     if request.user.has_perm(perm):
         return True
     return False

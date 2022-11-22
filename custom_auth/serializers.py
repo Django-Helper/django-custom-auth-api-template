@@ -20,6 +20,7 @@ from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
 from .utils import structure_role_permissions, get_permissions
+from utils.permissions import has_field_permission
 
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
@@ -528,6 +529,41 @@ class StaffUserDetailsSerializer(DynamicFieldsModelSerializer):
             except:
                 raise serializers.ValidationError(f'Role {role} does not exit.') 
         return value
+
+    def validate_email(self, value):
+        request = self.context['request']
+        if has_field_permission(request, 'custom_auth', 'cusotmuser', 'email'):
+            return value
+        else:
+            raise serializers.ValidationError(f'{request.user} does not has permission to update email.')
+    
+    def validate_phone_number(self, value):
+        request = self.context['request']
+        if has_field_permission(request, 'custom_auth', 'cusotmuser', 'phone_number'):
+            return value
+        else:
+            raise serializers.ValidationError(f'{request.user} does not has permission to update phone_number.')
+    
+    def validate_phone_number(self, value):
+        request = self.context['request']
+        if has_field_permission(request, 'custom_auth', 'cusotmuser', 'username'):
+            return value
+        else:
+            raise serializers.ValidationError(f'{request.user} does not has permission to update username.')
+
+    def validate_staff_profile(self, value):
+        request = self.context['request']
+        if has_field_permission(request, 'custom_auth', 'cusotmuser', 'staff_profile'):
+            return value
+        else:
+            raise serializers.ValidationError(f'{request.user} does not has permission to update staff_profile.')
+
+    def validate_customer_profile(self, value):
+        request = self.context['request']
+        if has_field_permission(request, 'custom_auth', 'cusotmuser', 'customer_profile'):
+            return value
+        else:
+            raise serializers.ValidationError(f'{request.user} does not has permission to update customer_profile.')
     
     def update(self, instance, validated_data):
         roles = validated_data.pop('roles')
