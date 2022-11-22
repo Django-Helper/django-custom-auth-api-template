@@ -47,7 +47,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
 import string
 from random import *
-from utils.permissions import CustomPermission
+from utils.permissions import CustomPermission, access_permissions_fields
 
 
 class CustomRedirect(HttpResponsePermanentRedirect):
@@ -550,6 +550,8 @@ class CustomContentListViews(GenericAPIView):
     serializer_class = PermissionSerializer
     perm_slug = "auth.permission"
     def get(self, request):
+        fields = access_permissions_fields(request, self.perm_slug)
+        print('access fields:',fields)
         permissions = Permission.objects.filter(content_type__app_label__in=['custom_auth','social_auth','country_app', 'auth']).values('content_type__app_label', 'content_type__model', 'codename')
         results = structure_role_permissions(permissions)
         return Response(results, status=status.HTTP_200_OK)
@@ -617,12 +619,20 @@ class CreateStaffUser(GenericAPIView):
 class StaffProfileView(RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffUserDetailsSerializer
-    perm_slug = "auth.staffprofile"
+    perm_slug = "custom_auth.staffprofile"
     def get_object(self):
         return get_object_or_404(CustomUser, id=self.request.user.id)
     
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        # print(Permission.objects.filter(group__user=request.user))
+        fields = access_permissions_fields(request, self.perm_slug)
+        print('access fields:',fields)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 class StaffProfilePictureView(RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]

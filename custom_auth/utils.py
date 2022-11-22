@@ -72,7 +72,7 @@ def structure_role_permissions(permissions):
                     model = {'name': None, 'permissions': [], 'attributes': []}
                     model['name'] = permission['content_type__model']
                     model['attributes'].append({'name': split_codename[-1], 'permissions': [permission['codename']]})
-                    module['models'].append[model]
+                    module['models'].append(model)
                     results.append(module)
                 else:
                     results.append({'name': permission['content_type__app_label'], 'models': [{'name': permission['content_type__model'], 'permissions': [permission['codename']], 'attributes':[]}]})

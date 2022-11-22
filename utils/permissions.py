@@ -1,5 +1,7 @@
 from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import MethodNotAllowed
+from django.contrib.auth.models import Permission, Group
+from django.db.models import Q
 
 class CustomPermission(BasePermission):
     message = "You do not have permission to perform action"
@@ -25,3 +27,27 @@ class CustomPermission(BasePermission):
         if request.user.has_perm(perm):
             return True
         return False
+
+def has_field_permission(request, app, model, field):
+    permission_map = {
+        # "GET": "{app_label}.view_{model_name}__{field_name}",
+        "PUT": "{app_label}.change_{model_name}__{field_name}",
+        "PATCH": "{app_label}.change_{model_name}__{field_name}",
+    }
+
+    if request.method not in permission_map:
+        raise MethodNotAllowed(request.method)
+    perm = permission_map.get(request.method).format(app_label=app, model_name=model, field_name=field)
+
+    if request.user.has_perm(perm):
+        return True
+    return False
+
+def access_permissions_fields(request,perm_slug):
+    if request.method == 'GET':
+        app, model = perm_slug.split(".")
+        user = request.user
+        permissions = Permission.objects.filter(Q(group__user=user) & Q(codename__icontains='view') & Q(codename__icontains='__') & Q(content_type__app_label=app) & Q(content_type__model=model)).values('codename')
+        return [permission['codename'].split('__')[-1] for permission in permissions]
+    raise MethodNotAllowed(request.method)
+
