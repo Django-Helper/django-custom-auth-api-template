@@ -580,7 +580,7 @@ class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class StaffRoleListView(GenericAPIView):
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     perm_slug = "auth.group"
     def get(self, request):
         print('request user:', request.user)
@@ -617,7 +617,7 @@ class CreateStaffUser(GenericAPIView):
 
 
 class StaffProfileView(RetrieveUpdateAPIView):
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffUserDetailsSerializer
     perm_slug = "custom_auth.staffprofile"
     def get_object(self):
@@ -631,7 +631,7 @@ class StaffProfileView(RetrieveUpdateAPIView):
         fields = access_permissions_fields(request, self.perm_slug)
         print('access fields:',fields)
         instance = self.get_object()
-        serializer = self.get_serializer(instance)
+        serializer = self.get_serializer(instance, fields=tuple(fields))
         return Response(serializer.data)
 
 class StaffProfilePictureView(RetrieveUpdateAPIView):
