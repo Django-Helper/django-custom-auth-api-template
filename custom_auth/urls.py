@@ -1,24 +1,27 @@
 from django.urls import path
-from .views import (Register, VerifyRegisterEmail, 
-                    LoginView, LogoutView, CustomerCartView, 
-                    CustomerFavouriteView, CustomerHistoryView,
-                    CustomerProfileView, ListCustomerView, SendVerifyEmail,
-                    RequestPasswordResetEmail, PasswordTokenCheckAPIForEmail,
-                    RequestPasswrodResetOTP, SetNewPasswordAPIView, 
-                    VerifyOTPForResetPasswrod, ChangePawordFromProfile, 
-                    CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
-                    PrimaryEmailUpdateTokenCheckAPIForEmail,
-                    RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
-                    LoginOTPRequest, LoginWithOTP, SendEmailView, CustomContentListViews,
-                    StaffRoleCreate, StaffRoleListView, CreateStaffUser, StaffProfilePictureView,
-                    StaffProfileView, StaffModulePermissionView, StaffModuleAttributePermissionView,
-                    StaffRoleDetailView
-                    # AdminRoleListView,
-                    # AdminRoleDetailView, ModuleListView, ModuleDetailView, PermissionListView,
-                    # PermissionDetailView, ModulePermissionListView, ModulePermissionDetailView
-                    )
 from rest_framework_simplejwt.views import (
     TokenRefreshView
+)
+
+from .views import (
+     Register, VerifyRegisterEmail, 
+     LoginView, LogoutView, CustomerCartView, 
+     CustomerFavouriteView, CustomerHistoryView,
+     CustomerProfileView, ListCustomerView, SendVerifyEmail,
+     RequestPasswordResetEmail, PasswordTokenCheckAPIForEmail,
+     RequestPasswrodResetOTP, SetNewPasswordAPIView, 
+     VerifyOTPForResetPasswrod, ChangePawordFromProfile, 
+     CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
+     PrimaryEmailUpdateTokenCheckAPIForEmail,
+     RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
+     LoginOTPRequest, LoginWithOTP, SendEmailView,
+)
+                    
+from .staff_views import (
+     CustomContentListViews, StaffRoleCreate, 
+     StaffRoleListView, CreateStaffUser, StaffProfilePictureView,
+     StaffProfileView, StaffModulePermissionView, 
+     StaffModuleAttributePermissionView, StaffRoleDetailView
 )
 
 urlpatterns = [

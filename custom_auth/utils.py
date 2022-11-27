@@ -4,7 +4,9 @@ from auth_api import settings
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.models import Permission, Group
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from rest_framework import serializers
 
 def get_registration_verify_email_data(user, request):
     payload = {
@@ -85,3 +87,26 @@ def get_permissions(permission_objs):
     content_type__app_labels = [item['content_type__app_label'] for item in permission_objs]
     permissions = Permission.objects.filter(Q(codename__in=codenames) & Q(content_type__app_label__in=content_type__app_labels))
     return permissions
+
+
+
+def do_exit_contenttype(values):
+    for value in values:
+        total_contenttype=ContentType.objects.filter(app_label=value).count()
+        if total_contenttype == 0:
+            raise serializers.ValidationError(f'{value} content_type__app_label does not exist!')
+
+def do_exist_permissions(values):
+    for value in values:
+        try:
+            Permission.objects.get(codename=value)
+        except:
+            raise serializers.ValidationError(f'{value} permission does not exist!')
+        else:
+            continue
+
+# def do_exist_permissions(self, model, values, attribute_name):
+    #     kwargs = {
+    #     '{0}__{1}'.format(attribute_name, 'in'): values,
+    #     }
+    #     return model.objects.filter(**kwargs).count() == len(values)
