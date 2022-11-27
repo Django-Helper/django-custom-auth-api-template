@@ -1,11 +1,11 @@
-from rest_framework import serializers
-from .models import (CustomUser,
-                    StaffProfile)
-
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from django.db.models import Q
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
+from django.contrib.contenttypes.models import ContentType
+
+from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
+
+from .models import (CustomUser, StaffProfile, )
 from .utils import structure_role_permissions, get_permissions, do_exist_permissions, do_exit_contenttype
 from utils.permissions import has_field_permission
 
@@ -255,7 +255,7 @@ class StaffUserSerializer(serializers.ModelSerializer):
 
     def validate_roles(self, value):
         for role in value:
-            print('role:', role)
+            # print('role:', role)
             try:
                 Group.objects.get(name=role.lower())
             except:

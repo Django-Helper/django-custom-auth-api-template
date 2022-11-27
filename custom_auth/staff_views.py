@@ -26,8 +26,8 @@ class CustomContentListViews(GenericAPIView):
     serializer_class = PermissionSerializer
     perm_slug = "auth.permission"
     def get(self, request):
-        fields = access_permissions_fields(request, self.perm_slug)
-        print('access fields:',fields)
+        # fields = access_permissions_fields(request, self.perm_slug)
+        # print('access fields:',fields)
         permissions = Permission.objects.filter(content_type__app_label__in=['custom_auth','social_auth','country_app', 'auth']).values('content_type__app_label', 'content_type__model', 'codename')
         results = structure_role_permissions(permissions)
         return Response(results, status=status.HTTP_200_OK)
@@ -65,8 +65,8 @@ class StaffRoleListView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     perm_slug = "auth.group"
     def get(self, request):
-        print('request user:', request.user)
-        print('request auth:', request.auth)
+        # print('request user:', request.user)
+        # print('request auth:', request.auth)
         roles = Group.objects.all()
         results = [{'id':role.id, 'name':role.name, 'moduels': structure_role_permissions(role.permissions.all().values('content_type__app_label', 'content_type__model', 'codename'))} for role in roles]
         return Response(results, status=status.HTTP_200_OK)
@@ -111,7 +111,7 @@ class StaffProfileView(RetrieveUpdateAPIView):
     def retrieve(self, request, *args, **kwargs):
         # print(Permission.objects.filter(group__user=request.user))
         fields = access_permissions_fields(request, self.perm_slug)
-        print('access fields:',fields)
+        # print('access fields:',fields)
         instance = self.get_object()
         serializer = self.get_serializer(instance, fields=tuple(fields))
         return Response(serializer.data)

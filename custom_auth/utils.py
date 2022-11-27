@@ -105,8 +105,8 @@ def do_exist_permissions(values):
         else:
             continue
 
-# def do_exist_permissions(self, model, values, attribute_name):
-    #     kwargs = {
-    #     '{0}__{1}'.format(attribute_name, 'in'): values,
-    #     }
-    #     return model.objects.filter(**kwargs).count() == len(values)
+def do_exist_permissions(model, values, attribute_name):
+        kwargs = {
+        '{0}__{1}'.format(attribute_name, 'in'): values,
+        }
+        return model.objects.filter(**kwargs).count() == len(values)

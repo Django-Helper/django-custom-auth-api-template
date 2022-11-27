@@ -1,16 +1,18 @@
-from rest_framework import serializers
-from .models import (CustomUser, CustomerProfile, PhoneOtp)
-from django.contrib import auth
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.db.models import Q
 from django.utils import timezone
 from django.core.validators import validate_email
 from django.contrib.auth.models import Permission
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+
+from django.contrib import auth
+from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
+
 from .utils import structure_role_permissions
+from .models import (CustomUser, CustomerProfile, PhoneOtp)
 
 
 class CustomerProfileSerializers(serializers.ModelSerializer):
@@ -252,7 +254,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         user = self.context['user']
-        print(attrs['new_password'], attrs['confirm_password'])
+        # print(attrs['new_password'], attrs['confirm_password'])
         if not user.check_password(attrs['old_password']):
             raise ValidationError('Your old password is wrong.')
         if attrs['new_password'] != attrs['confirm_password']:
@@ -368,7 +370,7 @@ class LoginOTPVerifySerializer(serializers.ModelSerializer):
                     otp.is_used = True
                     otp.save()
                     PhoneOtp.objects.filter(is_used = True).delete()
-                    print('login with phone')
+                    # print('login with phone')
                     return {
                         'email': user.email,
                         'phone_number': user.phone_number,
@@ -384,7 +386,7 @@ class LoginOTPVerifySerializer(serializers.ModelSerializer):
                     otp.is_used = True
                     otp.save()
                     PhoneOtp.objects.filter(is_used = True).delete()
-                    print('login with email')
+                    # print('login with email')
                     return {
                         'email': user.email,
                         'phone_number': user.phone_number,

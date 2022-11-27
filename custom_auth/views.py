@@ -138,7 +138,7 @@ class LoginOTPRequest(GenericAPIView):
                         send_email.delay(**kwargs)
                         return Response({'message': 'We have sent you login OTP code in your email.', 'data': []}, status=status.HTTP_200_OK)
                     except Exception as e:
-                        print('email exception:', e)
+                        # print('email exception:', e)
                         return Response({"message": 'Network Error', 'errors': ['can not send login OTP email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 except CustomUser.DoesNotExist:
                     try:
