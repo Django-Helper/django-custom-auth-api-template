@@ -546,7 +546,7 @@ class SendEmailView(GenericAPIView):
 
 
 class CustomContentListViews(GenericAPIView):
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = PermissionSerializer
     perm_slug = "auth.permission"
     def get(self, request):
@@ -568,7 +568,7 @@ class StaffRoleCreate(GenericAPIView):
 
 class StaffRoleDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Group.objects.all()
-    # permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, CustomPermission]
     serializer_class = StaffRoleDetailsSerializer
     perm_slug = "auth.group"
     def destroy(self, request, *args, **kwargs):
