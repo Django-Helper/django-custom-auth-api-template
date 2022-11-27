@@ -458,6 +458,45 @@ class StaffRoleCreateSerializer(serializers.Serializer):
 
     class Meta:
         fields = '__all__'
+
+    # def do_exist_permissions(self, model, values, attribute_name):
+    #     kwargs = {
+    #     '{0}__{1}'.format(attribute_name, 'in'): values,
+    #     }
+    #     return model.objects.filter(**kwargs).count() == len(values)
+
+    def do_exit_contenttype(self, values):
+        for value in values:
+            total_contenttype=ContentType.objects.filter(app_label=value).count()
+            if total_contenttype == 0:
+                raise serializers.ValidationError(f'{value} content_type__app_label does not exist!')
+
+    def do_exist_permissions(self, values):
+        for value in values:
+            try:
+                Permission.objects.get(codename=value)
+            except:
+                raise serializers.ValidationError(f'{value} permission does not exist!')
+            else:
+                continue
+
+
+    def validate_permissions(self, value):
+        if not all('codename' in item and 'content_type__app_label' in item for item in value):
+            raise serializers.ValidationError("Permissions object key is not valid. Permissions object only have 'codename' and 'content_type__app_label' key!")
+        codenames = list(set([item['codename'] for item in value]))
+        content_type__app_labels = list(set([item['content_type__app_label'] for item in value]))
+        self.do_exit_contenttype(content_type__app_labels)
+        self.do_exist_permissions(codenames)
+        return value
+    
+    def validate_name(self, value):
+        try:
+            Group.objects.get(name=value.lower())
+        except:
+            return value
+        else:
+            raise serializers.ValidationError(f'{value} group/role already exist!')
     
     def create(self, validated_data):
         name = validated_data.pop('name')

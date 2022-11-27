@@ -27,11 +27,9 @@ from auth_api import settings
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.shortcuts import redirect
 from django.http import HttpResponsePermanentRedirect
 import os
 from .utils import (get_registration_verify_email_data, get_staff_registration_verify_email_data, 
@@ -43,7 +41,6 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
 from .tasks import send_email
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, Group
 import string
 from random import *
