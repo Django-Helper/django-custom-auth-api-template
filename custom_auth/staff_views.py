@@ -11,9 +11,10 @@ from .models import (CustomUser, StaffProfile, )
 from .staff_serializers import (StaffProfileSerializers, PermissionSerializer,
                             StaffUserSerializer, StaffProfilePictureSerializer, StaffUserDetailsSerializer,
                             StaffRoleCreateSerializer, StaffRoleDetailsSerializer)
-from .utils import (get_staff_registration_verify_email_data, structure_role_permissions, )
+from .utils import (get_staff_registration_verify_email_data, structure_role_permissions, send_email_async)
 from .tasks import send_email
 from utils.permissions import CustomPermission, access_permissions_fields
+from utils.send_email import Util
 
 
 
@@ -84,17 +85,23 @@ class CreateStaffUser(GenericAPIView):
         if serializer.is_valid():
             serializer.save()
             user_data = serializer.data
-            user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
-
-            data = get_staff_registration_verify_email_data(user, password, request)
-            try:
-                kwargs = {'data': data}
-                send_email.delay(**kwargs)
+            kwargs = {
+                "user_id": user_data['id'],
+                "password": password,
+                "email": user_data['email'],
+                "request": request,
+                "username": user_data['username']
+            }
+            data = get_staff_registration_verify_email_data(**kwargs)
+            response=send_email_async(data)
+            if response.status_code == 200:
                 context = {'message': 'registration successfull. Check verify email and verfiy. Verify email expired within 30 minutes.'}
                 return Response(context, status=status.HTTP_201_CREATED)
-            except:
-                return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                context = {"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}
+                return Response(context, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        context = {"message": 'Bad Request', 'errors': serializer.errors}
+        return Response(context, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -136,3 +143,6 @@ class StaffModuleAttributePermissionView(GenericAPIView):
 
     def get(self, request):
         pass
+
+
+        

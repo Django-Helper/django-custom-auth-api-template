@@ -21,7 +21,7 @@ from .staff_views import (
      CustomContentListViews, StaffRoleCreate, 
      StaffRoleListView, CreateStaffUser, StaffProfilePictureView,
      StaffProfileView, StaffModulePermissionView, 
-     StaffModuleAttributePermissionView, StaffRoleDetailView
+     StaffModuleAttributePermissionView, StaffRoleDetailView,
 )
 
 urlpatterns = [
@@ -61,6 +61,6 @@ urlpatterns = [
     path('staff_profile/', StaffProfileView.as_view(), name='staff_profile'),
     path('staff_profile_picture/', StaffProfilePictureView.as_view(), name='staff_profile_picture'),
     path('staff_module_permissions/', StaffModulePermissionView.as_view(), name='staff_module_permission'),
-    path('staff_module_attribute_permissions', StaffModuleAttributePermissionView.as_view(), name='staff_module_attribute_permissions')
+    path('staff_module_attribute_permissions/', StaffModuleAttributePermissionView.as_view(), name='staff_module_attribute_permissions')
 
 ]

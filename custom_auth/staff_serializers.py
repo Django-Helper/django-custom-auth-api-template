@@ -246,7 +246,7 @@ class StaffUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone_number', 'username', 'password', 'roles', 'auth_providers', 'staff_profile']
+        fields = ['id', 'email', 'phone_number', 'username', 'password', 'roles', 'auth_providers', 'staff_profile']
 
     def validate_password(self, value):
         if len(value) < 8:

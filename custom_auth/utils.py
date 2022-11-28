@@ -1,11 +1,13 @@
 import datetime
 import jwt
+import requests
 from auth_api import settings
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from rest_framework import serializers
 
 def get_registration_verify_email_data(user, request):
@@ -25,9 +27,14 @@ def get_registration_verify_email_data(user, request):
     return data
 
 
-def get_staff_registration_verify_email_data(user, password, request):
+def get_staff_registration_verify_email_data(**kwargs):
+    user_id = kwargs['user_id']
+    username = kwargs['username']
+    email = kwargs['email']
+    request = kwargs['request']
+    password = kwargs['password']
     payload = {
-                "user_id": str(user.id),
+                "user_id": str(user_id),
                 "exp": datetime.datetime.utcnow()
                 + datetime.timedelta(minutes=5, seconds=00),
                 "iat": datetime.datetime.utcnow(),
@@ -37,9 +44,22 @@ def get_staff_registration_verify_email_data(user, password, request):
     current_site = get_current_site(request).domain
     relativeLink = reverse('register_email_verify')
     absurl = 'http://'+current_site+relativeLink+'?token='+str(token)
-    email_body = 'Hi '+user.username+' Use link below to verify your email \n'+absurl+'\n'+"Your Temporary Password is:"+'\n'+password
-    data = {'email_body':email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
+    email_body = 'Hi '+username+' Use link below to verify your email \n'+absurl+'\n'+"Your Temporary Password is:"+'\n'+password
+    data = {"email_body":email_body, "to_email": email, "email_subject": 'Verify your email'}
     return data
+
+
+def send_email_async(data):
+    url = 'http://192.168.50.179:8000/api/v1/send_email/'
+    X_API_KEY = 'qCqkmKdf.7vAb1A7cJRLTIQ1xpUGUBrooJ7cRaJ35'
+
+    HEADER = {
+        'Content-Type': 'application/json',
+        'x-api-key': X_API_KEY
+    }
+    # header = {'Content-Type': 'application/json','x-api-key': os.environ.get('BARBQTONIGHT_BACKEND_X_API_KEY')}
+    response = requests.post(url, json=data, headers=HEADER)
+    return response
 
 def structure_role_permissions(permissions):
     results = []

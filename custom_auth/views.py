@@ -25,7 +25,7 @@ from drf_yasg import openapi
 from .tokens import PrimaryEmailUpdateTokenGenerator, PrimaryPhoneUpdateTokenGenerator
 from .tasks import send_email
 from .models import (CustomUser, CustomerProfile, )
-from .utils import (get_registration_verify_email_data, )
+from .utils import (get_registration_verify_email_data, send_email_async)
 from .serializers import (CustomUserSerializers, CustomUserDetailsSerializer, 
                             EmailVerificationSerializer, LoginSerializer, 
                             LogoutSerializer, ResetPasswordEmailRequestSerializer,
@@ -53,12 +53,11 @@ class Register(GenericAPIView):
             user_data = serializer.data
             user = CustomUser.objects.get(email=user_data['email']) if user_data['email'] else CustomUser.objects.get(phone_number=user_data['phone_number'])
             data = get_registration_verify_email_data(user, request)
-            try:
-                kwargs = {'data': data}
-                send_email.delay(**kwargs)
+            response=send_email_async(data)
+            if response.status_code == 200:
                 context = {'message': 'registration successfull. For verfiy check email and verfiy. Verify email expired within 30 minutes'}
                 return Response(context, status=status.HTTP_201_CREATED)
-            except:
+            else:
                 return Response({"message": 'Network Error', 'errors': ['registration successfull but can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"message": 'Bad Request', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -71,12 +70,11 @@ class SendVerifyEmail(APIView):
         user = request.user
         if not user.is_verified:
             data = get_registration_verify_email_data(user, request)
-            try:
-                kwargs = {'data': data}
-                send_email.delay(**kwargs)
+            response=send_email_async(data)
+            if response.status_code == 200:
                 context = {'message': 'Verify email send successfully. For verfiy check email and verfiy. Verify email expired within 30 minutes.'}
                 return Response(context, status=status.HTTP_200_OK)
-            except:
+            else:
                 return Response({"message": 'Network Error', 'errors': ['can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'message': 'Validation Error', 'errors': ['User Already verified.']})
 
@@ -133,12 +131,10 @@ class LoginOTPRequest(GenericAPIView):
                     context_data = f"Hello, {customer_name}, Your login OTP code is {otp}. OTP expire after 5 minutes."
                     data = {'email_body': context_data, 'to_email': email_or_phone,
                         'email_subject': 'Login OTP'}
-                    try:
-                        kwargs = {'data': data}
-                        send_email.delay(**kwargs)
+                    response=send_email_async(data)
+                    if response.status_code == 200:
                         return Response({'message': 'We have sent you login OTP code in your email.', 'data': []}, status=status.HTTP_200_OK)
-                    except Exception as e:
-                        # print('email exception:', e)
+                    else:
                         return Response({"message": 'Network Error', 'errors': ['can not send login OTP email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 except CustomUser.DoesNotExist:
                     try:
@@ -208,11 +204,10 @@ class RequestPasswordResetEmail(GenericAPIView):
                     absurl+"?redirect_url="+redirect_url
             data = {'email_body': email_body, 'to_email': user.email,
                         'email_subject': 'Reset your passsword'}
-            try:
-                kwargs = {'data': data}
-                send_email.delay(**kwargs)
+            response=send_email_async(data)
+            if response.status_code == 200:
                 return Response({'message': 'We have sent you a link to reset your password', 'data': []}, status=status.HTTP_200_OK)
-            except:
+            else:
                 return Response({"message": 'Network Error', 'errors': ['can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except CustomUser.DoesNotExist:
             return Response({'message': 'something wrong', 'errors': ['user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -312,11 +307,10 @@ class RequestPrimaryEmailUpdateEmail(GenericAPIView):
                     absurl+"?redirect_url="+redirect_url
             data = {'email_body': email_body, 'to_email': email,
                         'email_subject': 'Reset your primary email'}
-            try:
-                kwargs = {'data': data}
-                send_email.delay(**kwargs)
+            response=send_email_async(data)
+            if response.status_code == 200:
                 return Response({'message': 'We have sent you a link to reset your primary email', 'data': []}, status=status.HTTP_200_OK)
-            except:
+            else:
                 return Response({"message": 'Network Error', 'errors': ['Can not send verify email.Please check your internet connection.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except Exception as e:
