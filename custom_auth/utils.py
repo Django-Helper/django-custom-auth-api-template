@@ -50,9 +50,11 @@ def get_staff_registration_verify_email_data(**kwargs):
 
 
 def send_email_async(data):
-    url = 'http://192.168.50.200:80/api/v1/send_email/'
-    # X_API_KEY = 'qCqkmKdf.7vAb1A7cJRLTIQ1xpUGUBrooJ7cRaJ35'
-    X_API_KEY = 'S6IXUApL.dlLlGlCbrL64vyC5qFVdIOwn1JjYQYdv'
+    # url = 'http://192.168.50.179:8000/api/v1/send_email/'
+    url = 'https://scheduler.algorithmgeneration.com/api/v1/send_email/'
+    # X_API_KEY = 'qCqkmKdf.7vAb1A7cJRLTIQ1xpUGUBrooJ7cRaJ35' #local
+    # X_API_KEY = 'S6IXUApL.dlLlGlCbrL64vyC5qFVdIOwn1JjYQYdv' # test server
+    X_API_KEY = 'Tg0Ak5uc.kkTLkjKVgTdMuhVFE4jGlUsEsksYSVUh' # aws server
 
     HEADER = {
         'Content-Type': 'application/json',

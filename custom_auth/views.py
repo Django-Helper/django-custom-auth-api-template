@@ -270,6 +270,18 @@ class RequestPasswrodResetOTP(GenericAPIView):
         except CustomUser.DoesNotExist:
             return Response({'message': 'something wrong', 'errors': ['Invalid json or Phone number can not be blank or user does not exit.']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class VerifyRegistrationOTP(GenericAPIView):
+    serializer_class = VerifyOTPForResetPasswordSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # phone_number = serializer.data['phone_number']
+        # user = CustomUser.objects.get(phone_number=phone_number)
+        # uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+        # token = PasswordResetTokenGenerator().make_token(user)
+        # context_data = {'uidb64': uidb64, 'token': token}
+        return Response({'message': 'Registration OTP verify successfully', 'data': []}, status=status.HTTP_200_OK)
+
 
 class VerifyOTPForResetPasswrod(GenericAPIView):
     serializer_class = VerifyOTPForResetPasswordSerializer

@@ -14,7 +14,7 @@ from .views import (
      CustomerProfilePictureView, RequestPrimaryEmailUpdateEmail,
      PrimaryEmailUpdateTokenCheckAPIForEmail,
      RequestPrimaryPhoneUpdateOtp, VerifyPrimaryPhoneUpdateOtp,
-     LoginOTPRequest, LoginWithOTP, SendEmailView,
+     LoginOTPRequest, LoginWithOTP, SendEmailView, VerifyRegistrationOTP,
 )
                     
 from .staff_views import (
@@ -39,6 +39,7 @@ urlpatterns = [
     path('customer_profile/', CustomerProfileView.as_view(), name='customer_profile'),
     path('customer_profile_picture/', CustomerProfilePictureView.as_view(), name='customer_profile_picture'),
     path('register_email_verify/', VerifyRegisterEmail.as_view(), name='register_email_verify'),
+    path('register_phone_verify/', VerifyRegistrationOTP.as_view(), name='register_phone_verify'),
     path('request_reset_password_email/', RequestPasswordResetEmail.as_view(),
          name="request_reset_password_email"),
     path('password_reset/<uidb64>/<token>/',
